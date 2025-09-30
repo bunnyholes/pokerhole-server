@@ -24,6 +24,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-docker-compose'
 
     compileOnly 'org.projectlombok:lombok:1.18.42'
@@ -31,15 +32,24 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok:1.18.42'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
 
+    // MapStruct for DTO mapping
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
     runtimeOnly 'org.postgresql:postgresql'
 
     // Spring Boot 테스트 스타터 하나로 JUnit (Jupiter) + AssertJ + Mockito 등 포함
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.h2database:h2'
+    testImplementation 'org.awaitility:awaitility:4.2.2'
 
     // 터미널 CLI 구현을 위한 JLine 구성요소
     implementation 'org.jline:jline-terminal:3.25.0'
     implementation 'org.jline:jline-reader:3.25.0'
+    
+    // Utility libraries
+    implementation 'org.apache.commons:commons-lang3'
 }
 
 tasks.named('test') {

@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 public class GameRoom {
@@ -18,13 +20,17 @@ public class GameRoom {
     private final String name;
     private final Instant createdAt = Instant.now();
     private final Dealer dealer = Dealer.newDealer();
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private final Map<String, Participant> participants = new LinkedHashMap<>();
     private SessionState host;
+    private RoundLifecycleManager lifecycleManager;
+    private boolean isRoundInProgress = false;
 
     public GameRoom(String id, String name) {
         this.id = id;
         this.name = name;
+        this.lifecycleManager = new RoundLifecycleManager(this, scheduler);
     }
 
     public String id() {
@@ -161,13 +167,85 @@ public class GameRoom {
                     .collect(Collectors.toList()));
 
             dealer.retrieveCard();
+            isRoundInProgress = true;
+            
+            // 라운드 완료 처리 - 5초 타이머 시작
+            lifecycleManager.onRoundComplete();
         }
 
         announcements.forEach(this::broadcast);
     }
 
+    /**
+     * 다음 라운드 자동 시작 (lifecycleManager에서 호출)
+     */
+    public void autoStartNextRound() {
+        if (host == null) {
+            broadcast("⚠️ 방장이 없어 다음 라운드를 시작할 수 없습니다.");
+            return;
+        }
+        
+        // 자동으로 다음 라운드 시작
+        try {
+            lifecycleManager.startRound();
+            startRound(host);
+            isRoundInProgress = true;
+        } catch (IllegalStateException e) {
+            broadcast("⚠️ " + e.getMessage());
+            isRoundInProgress = false;
+        }
+    }
+
+    /**
+     * 라운드 시작 가능 여부 확인
+     */
+    public boolean canStartRound() {
+        return participants.size() >= Dealer.MIN_PLAYER;
+    }
+
+    /**
+     * 나가기 요청 처리 (라운드 중에는 예약만)
+     */
+    public void requestLeave(SessionState session) {
+        if (isRoundInProgress) {
+            lifecycleManager.requestLeave(session);
+        } else {
+            // 라운드가 진행 중이 아니면 즉시 나가기
+            remove(session);
+        }
+    }
+    
+    /**
+     * 연결 끊김 처리
+     */
+    public void handleDisconnect(SessionState session) {
+        if (isRoundInProgress) {
+            lifecycleManager.handleDisconnect(session);
+        } else {
+            remove(session);
+        }
+    }
+
+    /**
+     * 세션 ID로 플레이어 제거
+     */
+    public void removeBySessionId(String sessionId) {
+        Participant participant = participants.get(sessionId);
+        if (participant != null) {
+            remove(participant.session());
+        }
+    }
+
     public synchronized boolean isEmpty() {
         return participants.isEmpty();
+    }
+    
+    /**
+     * 방 정리 (스케줄러 종료)
+     */
+    public void cleanup() {
+        lifecycleManager.cleanup();
+        scheduler.shutdown();
     }
 
     private String buildParticipantLine() {
@@ -179,7 +257,8 @@ public class GameRoom {
                 player.getNickName(), player.getPoint(), player.getWins(), player.getLosses(), player.getDraws());
     }
 
-    private void broadcast(String message) {
+    // Package-private for RoundLifecycleManager
+    void broadcast(String message) {
         snapshotSessions().forEach(session -> session.send(message));
     }
 

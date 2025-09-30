@@ -77,7 +77,8 @@ public class TerminalCommandProcessor {
     public void handleDisconnect(SessionState state) {
         Optional<GameRoom> room = state.currentRoom();
         room.ifPresent(currentRoom -> {
-            boolean empty = currentRoom.remove(state);
+            currentRoom.handleDisconnect(state);
+            boolean empty = currentRoom.isEmpty();
             if (empty) {
                 roomRegistry.removeRoom(currentRoom.id());
             }
@@ -162,11 +163,18 @@ public class TerminalCommandProcessor {
     private void handleLeave(SessionState state) {
         GameRoom room = state.currentRoom()
                 .orElseThrow(() -> new IllegalStateException("현재 참여 중인 방이 없습니다."));
-        boolean empty = room.remove(state);
-        if (empty) {
-            roomRegistry.removeRoom(room.id());
+        
+        // 라운드 중이면 예약, 아니면 즉시 나가기
+        room.requestLeave(state);
+        
+        // 즉시 나간 경우에만 처리
+        if (state.currentRoom().isEmpty()) {
+            boolean empty = room.isEmpty();
+            if (empty) {
+                roomRegistry.removeRoom(room.id());
+            }
+            state.send("🏠 대기실로 이동했습니다.");
         }
-        state.send("🏠 대기실로 이동했습니다.");
     }
 
     private boolean handleQuit(SessionState state) {
