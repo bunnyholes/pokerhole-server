@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class StartupMessageListener {
 
-    private static final String STARTUP_MESSAGE = "서버가 실행되엇습니다. !";
+    private static final String STARTUP_MESSAGE = "Server is running normally.";
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {

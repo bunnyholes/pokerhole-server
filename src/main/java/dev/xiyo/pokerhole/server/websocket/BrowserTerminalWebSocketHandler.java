@@ -1,5 +1,6 @@
 package dev.xiyo.pokerhole.server.websocket;
 
+import dev.xiyo.pokerhole.server.guest.GuestVisitService;
 import dev.xiyo.pokerhole.server.session.SessionState;
 import dev.xiyo.pokerhole.server.terminal.TerminalCommandProcessor;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,14 @@ public class BrowserTerminalWebSocketHandler extends TextWebSocketHandler {
     private static final String STATE_ATTRIBUTE = "pokerholeSession";
 
     private final TerminalCommandProcessor commandProcessor;
+    private final GuestVisitService guestVisitService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         SessionState state = new SessionState(new WebSocketParticipantConnection(session));
         session.getAttributes().put(STATE_ATTRIBUTE, state);
         commandProcessor.onConnect(state);
+        guestVisitService.recordVisit(session.getId());
         log.info("WebSocket connection {} opened", session.getId());
     }
 

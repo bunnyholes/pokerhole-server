@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pokerhole
+      POSTGRES_USER: pokerhole
+      POSTGRES_PASSWORD: pokerhole
+    ports:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pokerhole"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

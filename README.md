@@ -13,6 +13,14 @@ Spring Boot 기반의 멀티플레이어 포커 게임 서버입니다. 표준 �
 - 텍스트 기반 명령 프로토콜 공유 (TCP 터미널 & 웹소켓)
 
 ## 실행 방법
+### 데이터베이스 준비 (PostgreSQL)
+Spring Boot Docker Compose 연동이 기본으로 포함되어 있습니다. 루트의 `compose.yaml`만 유지하면 애플리케이션이 기동될 때 PostgreSQL 컨테이너가 자동으로 올라오고 접속 정보도 주입됩니다.
+
+1. Docker Desktop 또는 호환 런타임이 실행 중인지 확인합니다.
+2. `./gradlew bootRun` 또는 패키징된 JAR 실행과 함께 서버를 기동하면 됩니다.
+
+별도 설정 없이 `pokerhole/pokerhole` 계정과 `pokerhole` 데이터베이스가 자동 생성됩니다. 호스트 포트는 Docker가 매번 랜덤으로 할당하므로 `docker compose ps` 명령으로 확인할 수 있습니다.
+
 ```bash
 ./gradlew bootRun
 ```
@@ -81,6 +89,8 @@ wscat -c ws://localhost:8080/ws/terminal
 ```bash
 ./gradlew test
 ```
+
+테스트는 내장 H2 데이터베이스를 자동으로 사용하므로 추가 설정이 필요 없습니다.
 
 ## 라이선스
 MIT License (프로젝트 루트의 LICENSE 파일 참고)

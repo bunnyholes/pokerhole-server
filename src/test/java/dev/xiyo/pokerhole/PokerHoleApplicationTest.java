@@ -8,15 +8,22 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
+@SpringBootTest(properties = "pokerhole.terminal.enabled=false")
 @ExtendWith(OutputCaptureExtension.class)
 class PokerHoleApplicationTest {
 
     @Test
-    void printsStartupMessage(CapturedOutput output) {
+    void printsCustomBannerAndStartupMessage(CapturedOutput output) {
+        String consoleOutput = output.getOut();
+
         assertTrue(
-                output.getOut().contains("서버가 실행되엇습니다. !"),
-                "서버가 실행되엇습니다. ! 메시지가 애플리케이션 시작 시 출력되어야 합니다."
+                consoleOutput.contains("XIYO"),
+                "서버 시작 시 커스텀 배너인 'XIYO'가 출력되어야 합니다."
+        );
+
+        assertTrue(
+                consoleOutput.contains("Server is running normally."),
+                "애플리케이션이 시작되면 'Server is running normally.' 메시지가 출력되어야 합니다."
         );
     }
 }
