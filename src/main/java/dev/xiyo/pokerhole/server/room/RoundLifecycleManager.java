@@ -1,6 +1,7 @@
 package dev.xiyo.pokerhole.server.room;
 
 import dev.xiyo.pokerhole.adapter.out.network.session.model.SessionState;
+import dev.xiyo.pokerhole.core.domain.ai.AIPlayer;
 import dev.xiyo.pokerhole.core.domain.round.RoundLifecycleState;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -131,10 +132,15 @@ public class RoundLifecycleManager {
         log.warn("Player {} disconnected from room {} during state {}", sessionId, gameRoom.id(), state);
         
         if (state == RoundLifecycleState.IN_PROGRESS) {
-            // AI로 대체하고 라운드 완료 후 제거
+            // 라운드 진행 중 연결 끊김 - 나가기 예약하고 전적에 포함
             pendingExits.add(sessionId);
-            gameRoom.broadcast("⚠️ " + session.player().map(p -> p.getNickName()).orElse("플레이어") + " 님의 연결이 끊어졌습니다. AI가 대신합니다.");
-            // TODO: AI 플레이어로 교체 로직
+            String playerName = session.player().map(p -> p.getNickName()).orElse("플레이어");
+            gameRoom.broadcast("⚠️ " + playerName + " 님의 연결이 끊어졌습니다.");
+            gameRoom.broadcast("💡 해당 플레이어는 라운드 종료 후 제거되며, 결과는 전적에 포함됩니다.");
+            
+            // 향후 TODO: AI 플레이어로 즉시 대체하여 게임 계속 진행
+            // AIPlayer replacement = AIPlayer.createRandom();
+            // gameRoom.replacePlayer(sessionId, replacement);
         } else {
             // 즉시 제거
             pendingExits.add(sessionId);

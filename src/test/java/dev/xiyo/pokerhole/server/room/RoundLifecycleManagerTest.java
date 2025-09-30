@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,17 +27,17 @@ class RoundLifecycleManagerTest {
 
     @BeforeEach
     void setUp() {
-        gameRoom = new GameRoom("TEST001", "테스트방");
+        gameRoom = new GameRoom("TEST-" + UUID.randomUUID(), "테스트방");
         
         // Mock SessionState
         hostSession = mock(SessionState.class);
-        when(hostSession.id()).thenReturn("host-id");
+        when(hostSession.id()).thenReturn("host-" + UUID.randomUUID());
         when(hostSession.isHost()).thenReturn(true);
         when(hostSession.currentRoom()).thenReturn(Optional.of(gameRoom));
         when(hostSession.player()).thenReturn(Optional.empty());
         
         player2Session = mock(SessionState.class);
-        when(player2Session.id()).thenReturn("player2-id");
+        when(player2Session.id()).thenReturn("player2-" + UUID.randomUUID());
         when(player2Session.isHost()).thenReturn(false);
         when(player2Session.currentRoom()).thenReturn(Optional.of(gameRoom));
         when(player2Session.player()).thenReturn(Optional.empty());
@@ -52,8 +53,10 @@ class RoundLifecycleManagerTest {
     @Test
     void 라운드_완료_후_5초_타이머_시작() {
         // Given
-        gameRoom.join(hostSession, "Host_" + System.nanoTime(), true);
-        gameRoom.join(player2Session, "Player2_" + System.nanoTime(), false);
+        String uuid1 = UUID.randomUUID().toString().substring(0, 8);
+        String uuid2 = UUID.randomUUID().toString().substring(0, 8);
+        gameRoom.join(hostSession, "Host_" + uuid1, true);
+        gameRoom.join(player2Session, "Player2_" + uuid2, false);
 
         // When
         gameRoom.startRound(hostSession);
@@ -65,14 +68,16 @@ class RoundLifecycleManagerTest {
     @Test
     void 라운드_중_나가기_요청은_예약만_됨() {
         // Given: 2명의 플레이어로 방 생성
-        gameRoom.join(hostSession, "Host_" + System.nanoTime(), true);
+        String uuid1 = UUID.randomUUID().toString().substring(0, 8);
+        String uuid2 = UUID.randomUUID().toString().substring(0, 8);
+        gameRoom.join(hostSession, "Host_" + uuid1, true);
         
         SessionState player2 = mock(SessionState.class);
-        when(player2.id()).thenReturn("player2-" + System.nanoTime());
+        when(player2.id()).thenReturn("player2-" + UUID.randomUUID());
         when(player2.currentRoom()).thenReturn(Optional.of(gameRoom));
         when(player2.player()).thenReturn(Optional.empty());
         
-        gameRoom.join(player2, "Player2_" + System.nanoTime(), false);
+        gameRoom.join(player2, "Player2_" + uuid2, false);
         
         // When: 라운드 시작 (현재는 즉시 완료됨)
         gameRoom.startRound(hostSession);
@@ -89,8 +94,10 @@ class RoundLifecycleManagerTest {
     @Test
     void 예약된_플레이어는_5초_후_자동으로_퇴장() {
         // Given
-        gameRoom.join(hostSession, "Host_" + System.nanoTime(), true);
-        gameRoom.join(player2Session, "Player2_" + System.nanoTime(), false);
+        String uuid1 = UUID.randomUUID().toString().substring(0, 8);
+        String uuid2 = UUID.randomUUID().toString().substring(0, 8);
+        gameRoom.join(hostSession, "Host_" + uuid1, true);
+        gameRoom.join(player2Session, "Player2_" + uuid2, false);
         gameRoom.startRound(hostSession);
 
         // When: 나가기 예약
@@ -106,8 +113,10 @@ class RoundLifecycleManagerTest {
     @Test
     void 라운드_진행_중이_아닐_때는_즉시_나가기() {
         // Given
-        gameRoom.join(hostSession, "Host_" + System.nanoTime(), true);
-        gameRoom.join(player2Session, "Player2_" + System.nanoTime(), false);
+        String uuid1 = UUID.randomUUID().toString().substring(0, 8);
+        String uuid2 = UUID.randomUUID().toString().substring(0, 8);
+        gameRoom.join(hostSession, "Host_" + uuid1, true);
+        gameRoom.join(player2Session, "Player2_" + uuid2, false);
         
         // When: 라운드 시작 전 나가기
         gameRoom.requestLeave(player2Session);

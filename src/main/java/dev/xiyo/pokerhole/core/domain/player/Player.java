@@ -17,7 +17,7 @@ public class Player {
         return new Player(nickName);
     }
 
-    private Player(String nickName) {
+    protected Player(String nickName) {
         // 규칙4, 닉네임은 고유해야한다.
         if (nickNames.contains(nickName))
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
