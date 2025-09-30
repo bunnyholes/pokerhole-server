@@ -1,154 +1,86 @@
-# 🃏 Poker Campus - 테스트 케이스 구현 프로젝트
+# 🃏 PokerHole 네트워크 서버
 
-## 🎯 목표
+Spring Boot 기반의 멀티플레이어 포커 게임 서버입니다. 표준 터미널(TCP 텍스트 클라이언트)과 브라우저(WebSocket 터미널)를 통해 접속해 방을 만들고 게임을 진행할 수 있습니다.
 
-**주어진 테스트 케이스를 모두 통과시켜 완전한 포커 게임을 구현하세요!**
+## 환경 요구 사항
+- Java 21 (Virtual Thread 지원)
+- Gradle 8.x (랩퍼 포함)
 
-현재 `src/main/java/` 폴더에는 **소스 코드가 하나도 없습니다.** 
-하지만 `src/test/java/` 폴더에는 **완성된 테스트 케이스들**이 준비되어 있습니다.
+## 핵심 기능
+- 기존 `Dealer`, `Player`, `Hand` 도메인 로직을 그대로 활용하는 게임 방 구조
+- 방장 생성/참가/퇴장 및 자동 방장 승계
+- 방장에 의한 라운드 시작과 라운드 결과 브로드캐스트
+- 텍스트 기반 명령 프로토콜 공유 (TCP 터미널 & 웹소켓)
 
-당신의 임무: **테스트가 요구하는 모든 클래스와 메서드를 구현하여 156개 테스트를 통과시키기**
+## 실행 방법
+```bash
+./gradlew bootRun
+```
 
----
+기본 HTTP 포트는 `8080`, 터미널 접속용 TCP 포트는 `7777`이며 `application.yml` 또는 실행 인자를 통해 비활성화/주소/포트를 모두 조정할 수 있습니다.
 
-## 🚀 시작하기
+```bash
+./gradlew bootRun --args='--server.port=9090 --pokerhole.terminal.enabled=true --pokerhole.terminal.host=127.0.0.1 --pokerhole.terminal.port=9000'
+```
 
-### 1단계: GitHub에서 프로젝트 포크하기
+## 터미널 접속 예시
+### 1. `nc`/`ncat` 활용 (macOS, Linux 기본 제공)
+```bash
+nc localhost 7777
+```
+또는 TLS가 필요한 경우 (예시)
+```bash
+ncat --ssl localhost 7777
+```
 
-1. **원본 리포지토리 페이지**로 이동
-2. 오른쪽 상단의 **Fork** 버튼 클릭
+### 2. PowerShell (Windows 기본 제공)
+```powershell
+powershell -Command "
+  $client = New-Object System.Net.Sockets.TcpClient('localhost',7777);
+  $stream = $client.GetStream();
+  $writer = New-Object System.IO.StreamWriter($stream); $writer.AutoFlush = $true;
+  $reader = New-Object System.IO.StreamReader($stream);
+  while ($true) {
+    if ($Host.UI.RawUI.KeyAvailable) { $line = Read-Host; $writer.WriteLine($line) }
+    if ($stream.DataAvailable) { Write-Host ($reader.ReadLine()) }
+    Start-Sleep -Milliseconds 50
+  }
+"
+```
 
-   *[포크 버튼 스크린샷 자리]*
+연결이 되면 다음과 같은 명령을 사용할 수 있습니다.
 
-3. **Create fork** 버튼 클릭하여 본인 계정으로 복사
+| 명령 | 설명 |
+| --- | --- |
+| `HELP` | 사용 가능한 명령어 안내 |
+| `ROOM LIST` | 현재 생성된 방 목록 조회 |
+| `ROOM CREATE <방이름> <닉네임>` | 방을 만들고 방장으로 입장 |
+| `ROOM JOIN <방ID> <닉네임>` | 기존 방에 참가 |
+| `START` | 방장이 라운드를 시작 |
+| `LEAVE` | 현재 방에서 퇴장 |
+| `QUIT` | 서버 연결 종료 |
 
-   *[포크 생성 화면 스크린샷 자리]*
+라운드를 시작하면 덱 셔플 → 카드 배분 → 패 공개 → 승자 판정 → 전적 브로드캐스트가 순차적으로 출력됩니다.
 
-### 2단계: IntelliJ IDEA로 클론하기
+## 브라우저(WebSocket) 터미널
+`/ws/terminal` 엔드포인트에 WebSocket으로 연결하면 동일한 텍스트 프로토콜을 사용할 수 있습니다. 예를 들어 `wscat`을 이용하면 다음과 같습니다.
 
-1. **IntelliJ IDEA** 실행
-2. 시작 화면에서 **Get from VCS** 선택
+```bash
+wscat -c ws://localhost:8080/ws/terminal
+```
 
-   *[IntelliJ 시작 화면 스크린샷 자리]*
+브라우저에서 직접 접속하려면 `xterm.js` 등 터미널 UI 컴포넌트로 해당 WebSocket 엔드포인트를 바인딩하면 됩니다.
 
-3. **GitHub** 탭에서 **Log In via GitHub...** 클릭 (처음 사용 시)
+## 패키지 구조
+- `com.pokerhole.server.room`: 방 생성 및 게임 라운드 관리
+- `com.pokerhole.server.session`: 접속 세션 추상화
+- `com.pokerhole.server.terminal`: TCP 터미널 서버 및 명령 처리기 (Java 21 Virtual Thread 활용)
+- `com.pokerhole.server.websocket`: WebSocket 터미널 핸들러
 
-   *[GitHub 로그인 화면 스크린샷 자리]*
-
-4. 포크된 **poker** 리포지토리 선택 후 **Clone** 클릭
-
-   *[리포지토리 선택 화면 스크린샷 자리]*
-
-5. 프로젝트가 열리면 **Trust Project** 선택
-
-   *[Trust Project 화면 스크린샷 자리]*
-
-### 3단계: 프로젝트 설정
-
-1. **Gradle 자동 import** 알림이 나타나면 **Import** 클릭
-
-   *[Gradle import 알림 스크린샷 자리]*
-
-2. **Java 버전 확인**: File → Project Structure → Project에서 Java 21+ 확인
-
-   *[Project Structure 설정 화면 스크린샷 자리]*
-
-### 4단계: 테스트 실행 확인
-
+## 테스트 실행
 ```bash
 ./gradlew test
 ```
 
-**예상 결과**: 모든 클래스가 없어서 컴파일 에러 발생 (정상입니다!)
-
-*[테스트 실행 결과 스크린샷 자리]*
-
----
-
-## 🧪 테스트 특징
-
-**리플렉션 기반 테스트**: 소스 코드가 없어도 컴파일 에러가 없습니다. 런타임에 클래스/메서드 존재 여부를 확인하고, 테스트 실패 메시지가 구현해야 할 내용을 정확히 알려줍니다.
-
----
-
-## 🎲 포커 게임 규칙
-
-**기본 규칙**: 2-4명, 100판 진행, 5장씩 배분, 초기 포인트 10,000점
-
-**포커 패 순서** (높은 순): 로열 플러시 → 스트레이트 플러시 → 포카드 → 풀하우스 → 플러시 → 스트레이트 → 쓰리카드 → 투페어 → 원페어 → 하이카드
-
-**스탠다드 포커 룰**: 무늬로 승부를 보지 않음, 게임 진행 순서 준수 필요
-
-**승부 판정 순서**: 
-1. **족보 비교** (로열 플러시가 포카드보다 높음)
-2. **같은 족보일 때** 핵심 카드의 숫자 비교 (예: 포카드 A vs 포카드 K → A 승리)
-3. **핵심 카드도 같을 때** 키커 카드를 높은 순으로 비교
-4. **모든 카드가 같을 때** 무승부
-
-> [!NOTE] 키커란?
-> 족보를 구성하는 카드 이외의 남은 카드로, 족보가 같을 때 승부를 가리는 데 사용됩니다. 예: A, A, A, K, Q에서 쓰리카드를 구성하는 A가 족보 카드, K와 Q가 키커입니다.
----
-
-## 📋 구현해야 할 클래스
-
-**Enum 제공**: `Suit`, `Rank`, `Tier`
-
-**구현 필요**: 
-- `src/main/java/common/`: `Card`, `Hand`
-- `src/main/java/dealer/`: `Deck`, `Dealer`  
-- `src/main/java/player/`: `PlayerRecord`, `Player`
-- `src/main/java/announcer/`: `Announcer`
-- `src/main/java/`: `PokerHole`
-
-**세부 사항은 테스트 케이스에서 확인하세요!**
-
----
-
-## 🛠️ 구현 방법
-
-1. **빈 클래스 생성** → `src/main/java/` 하위에 패키지별로 클래스 생성
-2. **테스트 실행** → `./gradlew test` (실패 메시지가 구현 가이드)
-3. **테스트 하나씩 통과** → 점진적으로 메서드 구현
-4. **반복** → 모든 테스트 통과까지
-
-## 🏆 성공 기준
-
-```bash
-./gradlew test
-BUILD SUCCESSFUL - 156 tests passed, 0 failed ✅
-```
-
-### 🎉 테스트 완료 후 안내
-
-모든 테스트가 성공하면 다음과 같은 예쁜 메시지가 표시됩니다:
-
-```
-🎉✅ 모든 테스트가 성공했습니다! ✅🎉
-📝💡 이제 다음 파일들의 주석을 제거하여 전체 코드를 확인하세요.
-
-🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢
-📁   - src/main/java/announcer/Announcer.java
-📁   - src/main/java/PokerHole.java
-🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢
-
-🚀⭐ 주석을 제거했으면 PokerHole.java의 main 메서드를 실행하여 결과를 확인하세요! ⭐🚀
-```
-
-> [!IMPORTANT]
-> 테스트가 성공한 후에는 `Announcer.java`와 `PokerHole.java` 파일에서 주석을 제거하여 전체 포커 게임을 실행할 수 있습니다. 두 파일은 서로 연관되어 있으므로 함께 주석을 제거해야 합니다.
-
-### 🎮 게임 실행하기
-
-테스트 완료 후 주석을 제거한 다음:
-
-1. **IntelliJ IDEA에서**: `PokerHole.java` 파일을 열고 `main` 메서드 옆의 ▶️ 버튼 클릭
-2. **터미널에서**: 
-   ```bash
-   ./gradlew run
-   ```
-
-포커 게임이 실행되어 100판의 게임 결과를 확인할 수 있습니다!
-
----
-
-**🚀 도전해보세요! 모든 테스트를 통과시킬 수 있을까요?**
+## 라이선스
+MIT License (프로젝트 루트의 LICENSE 파일 참고)

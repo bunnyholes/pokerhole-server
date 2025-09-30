@@ -55,6 +55,10 @@ public class Dealer {
         return player;
     }
 
+    public void removePlayer(Player player) {
+        this.players.remove(player);
+    }
+
     public void dealCard() {
         if (this.players.size() < Dealer.MIN_PLAYER) {
             String message = "⚠️ 플레이어가 " + Dealer.MIN_PLAYER + "명 이상이어야 합니다.";
