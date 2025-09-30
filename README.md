@@ -39,6 +39,51 @@ Spring Boot 4.x 기반의 멀티플레이어 포커 게임 서버입니다. Hexa
 - **이벤트 기반 게임 로직** - 도메인 이벤트를 통한 느슨한 결합
 - **설정 가능한 게임 규칙** - YAML 설정으로 게임 파라미터 조정
 
+## 🏁 빠른 시작
+
+### 1. 필수 요구 사항 설치
+- **Java 21+** 및 `JAVA_HOME` 설정
+- **Docker** 또는 Docker Desktop (PostgreSQL 컨테이너 실행용)
+- (선택) `docker compose` CLI, `nc`/`ncat`, `wscat`
+
+### 2. 프로젝트 클론 및 의존성 다운로드
+```bash
+git clone https://github.com/<your-account>/pokerhole.git
+cd pokerhole
+./gradlew --version   # Gradle 래퍼 초기화
+```
+
+### 3. 데이터베이스 컨테이너 실행
+루트에 포함된 `compose.yaml`을 사용하면 PostgreSQL이 자동으로 기동됩니다.
+
+```bash
+docker compose up -d
+docker compose ps    # 바인딩된 호스트 포트 확인
+```
+
+기본 계정은 `pokerhole/pokerhole`, 데이터베이스 명은 `pokerhole`입니다. 컨테이너는 애플리케이션 기동 시 자동으로 참조됩니다.
+
+### 4. 애플리케이션 실행
+
+```bash
+./gradlew bootRun
+```
+
+기본 HTTP 포트는 `8080`, TCP 터미널 포트는 `7777`입니다. 다른 포트를 사용하려면 실행 인자 또는 `application.yml`을 수정하면 됩니다.
+
+```bash
+./gradlew bootRun --args='--server.port=9090 --pokerhole.terminal.port=9000'
+```
+
+애플리케이션이 기동되면 `Started PokerholeApplication` 로그와 함께 서버가 준비됩니다.
+
+### 5. 서버 종료
+`Ctrl + C`로 프로세스를 중지하고, 필요시 다음 명령으로 데이터베이스 컨테이너를 정리합니다.
+
+```bash
+docker compose down
+```
+
 ## 실행 방법
 ### 데이터베이스 준비 (PostgreSQL)
 Spring Boot Docker Compose 연동이 기본으로 포함되어 있습니다. 루트의 `compose.yaml`만 유지하면 애플리케이션이 기동될 때 PostgreSQL 컨테이너가 자동으로 올라오고 접속 정보도 주입됩니다.
@@ -107,17 +152,23 @@ pokerhole:
     port: 7777        # 터미널 포트
 ```
 
-## 터미널 접속 예시
-### 1. `nc`/`ncat` 활용 (macOS, Linux 기본 제공)
+## 🎮 플레이어 접속 & 게임 진행
+
+### 접속 채널 개요
+- **TCP 터미널**: 표준 텍스트 기반 명령어 인터페이스. `nc`, `telnet`, 커스텀 클라이언트 등에서 사용합니다.
+- **WebSocket 터미널**: `/ws/terminal` 엔드포인트로 접속하면 브라우저나 `wscat` 등에서 동일한 프로토콜을 사용할 수 있습니다.
+
+### 1) TCP 터미널 접속 예시
+#### macOS / Linux (`nc` 또는 `ncat`)
 ```bash
 nc localhost 7777
 ```
-또는 TLS가 필요한 경우 (예시)
+TLS가 필요한 경우:
 ```bash
 ncat --ssl localhost 7777
 ```
 
-### 2. PowerShell (Windows 기본 제공)
+#### Windows PowerShell
 ```powershell
 powershell -Command "
   $client = New-Object System.Net.Sockets.TcpClient('localhost',7777);
@@ -132,6 +183,19 @@ powershell -Command "
 "
 ```
 
+### 2) WebSocket 터미널 접속 예시
+```bash
+wscat -c ws://localhost:8080/ws/terminal
+```
+브라우저에서 접속하려면 `xterm.js` 등의 터미널 UI를 WebSocket 엔드포인트에 바인딩하면 됩니다.
+
+### 3) 게임 플레이 흐름
+1. **방 만들기** – 방장은 `ROOM CREATE <방이름> <닉네임>` 명령으로 방을 생성하고 자동으로 입장합니다.
+2. **플레이어 초대** – 다른 플레이어는 동일한 서버에 접속하여 `ROOM JOIN <방ID> <닉네임>` 명령으로 참여합니다.
+3. **게임 시작** – 최소 인원이 충족되면 방장이 `START` 명령으로 라운드를 시작합니다.
+4. **라운드 진행** – 카드 배분, 베팅 라운드, 승자 판정 메시지가 순서대로 브로드캐스트됩니다.
+5. **다음 라운드 또는 종료** – `START`로 재경기를 진행하거나, `LEAVE`/`QUIT`으로 방 또는 서버에서 나갈 수 있습니다.
+
 연결이 되면 다음과 같은 명령을 사용할 수 있습니다.
 
 | 명령 | 설명 |
@@ -145,15 +209,6 @@ powershell -Command "
 | `QUIT` | 서버 연결 종료 |
 
 라운드를 시작하면 덱 셔플 → 카드 배분 → 패 공개 → 승자 판정 → 전적 브로드캐스트가 순차적으로 출력됩니다.
-
-## 브라우저(WebSocket) 터미널
-`/ws/terminal` 엔드포인트에 WebSocket으로 연결하면 동일한 텍스트 프로토콜을 사용할 수 있습니다. 예를 들어 `wscat`을 이용하면 다음과 같습니다.
-
-```bash
-wscat -c ws://localhost:8080/ws/terminal
-```
-
-브라우저에서 직접 접속하려면 `xterm.js` 등 터미널 UI 컴포넌트로 해당 WebSocket 엔드포인트를 바인딩하면 됩니다.
 
 ## 📐 아키텍처
 
