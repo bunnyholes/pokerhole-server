@@ -1,16 +1,16 @@
 plugins {
     id 'java'
+    id 'org.springframework.boot' version '3.2.6'
+    id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'BunnyHoles'
 version = '1.0.0'
 description = '포커 게임 구현 프로젝트'
 
-// 프로젝트 메타데이터
-ext {
-    projectUrl = 'https://github.com/BunnyHoles/PokerHole'
-    organizationUrl = 'https://github.com/BunnyHoles'
-    projectDescription = 'Java로 구현한 포커 게임'
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 repositories {
@@ -18,11 +18,19 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
 }
