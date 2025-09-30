@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-import dev.xiyo.pokerhole.server.terminal.TerminalGatewayProperties;
+import dev.xiyo.pokerhole.configuration.properties.TerminalGatewayProperties;
 
 @SpringBootApplication
 @EnableConfigurationProperties(TerminalGatewayProperties.class)

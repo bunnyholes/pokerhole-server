@@ -2,7 +2,7 @@ package dev.xiyo.pokerhole.server.room;
 
 import dev.xiyo.pokerhole.dealer.Dealer;
 import dev.xiyo.pokerhole.core.domain.player.Player;
-import dev.xiyo.pokerhole.server.session.SessionState;
+import dev.xiyo.pokerhole.adapter.out.network.session.model.SessionState;
 
 import java.time.Instant;
 import java.util.ArrayList;
