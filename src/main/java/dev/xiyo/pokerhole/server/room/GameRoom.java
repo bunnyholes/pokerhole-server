@@ -141,6 +141,10 @@ public class GameRoom {
                 throw new IllegalStateException("게임을 시작하려면 최소 " + Dealer.MIN_PLAYER + "명이 필요합니다.");
             }
 
+            // 라운드 시작
+            isRoundInProgress = true;
+            lifecycleManager.startRound();
+            
             announcements.add("🎲 새로운 라운드를 시작합니다.");
             dealer.newGame();
             announcements.add("🔄 덱을 섞습니다.");
@@ -167,9 +171,9 @@ public class GameRoom {
                     .collect(Collectors.toList()));
 
             dealer.retrieveCard();
-            isRoundInProgress = true;
             
             // 라운드 완료 처리 - 5초 타이머 시작
+            isRoundInProgress = false;
             lifecycleManager.onRoundComplete();
         }
 
