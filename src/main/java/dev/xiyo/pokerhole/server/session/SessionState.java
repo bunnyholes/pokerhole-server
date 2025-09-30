@@ -1,6 +1,6 @@
 package dev.xiyo.pokerhole.server.session;
 
-import dev.xiyo.pokerhole.player.Player;
+import dev.xiyo.pokerhole.core.domain.player.Player;
 import dev.xiyo.pokerhole.server.room.GameRoom;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package dev.xiyo.pokerhole.player;
+package dev.xiyo.pokerhole.core.domain.player;
 
 class PlayerRecord {
     private int wins;

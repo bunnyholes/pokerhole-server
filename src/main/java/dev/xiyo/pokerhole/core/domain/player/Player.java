@@ -1,4 +1,4 @@
-package dev.xiyo.pokerhole.player;
+package dev.xiyo.pokerhole.core.domain.player;
 
 import dev.xiyo.pokerhole.core.domain.card.*;
 
