@@ -4,6 +4,7 @@ import dev.xiyo.pokerhole.server.room.GameRoom;
 import dev.xiyo.pokerhole.server.room.GameRoomSummary;
 import dev.xiyo.pokerhole.server.room.RoomRegistry;
 import dev.xiyo.pokerhole.server.session.SessionState;
+import dev.xiyo.pokerhole.server.terminal.slash.SlashHintShell;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -18,15 +19,21 @@ import java.util.Optional;
 public class TerminalCommandProcessor {
 
     private final RoomRegistry roomRegistry;
+    private final SlashHintShell slashHintShell;
 
     public void onConnect(SessionState state) {
         state.send("🎮 PokerHole 네트워크 서버에 오신 것을 환영합니다!");
         state.send("HELP 를 입력하면 사용 가능한 명령을 확인할 수 있습니다.");
+        slashHintShell.onConnect(state);
     }
 
     public boolean handle(SessionState state, String rawInput) {
         String input = rawInput == null ? "" : rawInput.trim();
         if (input.isEmpty()) {
+            return true;
+        }
+
+        if (slashHintShell.handle(state, input)) {
             return true;
         }
 
