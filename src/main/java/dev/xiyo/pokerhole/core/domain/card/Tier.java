@@ -1,4 +1,4 @@
-package dev.xiyo.pokerhole.common;
+package dev.xiyo.pokerhole.core.domain.card;
 
 public enum Tier {
     HIGH_CARD,           // 하이카드

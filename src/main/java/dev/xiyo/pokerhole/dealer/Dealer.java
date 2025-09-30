@@ -1,7 +1,8 @@
 package dev.xiyo.pokerhole.dealer;
 
 
-import dev.xiyo.pokerhole.common.Card;
+import dev.xiyo.pokerhole.core.domain.card.Card;
+import dev.xiyo.pokerhole.core.domain.card.Deck;
 import dev.xiyo.pokerhole.player.Player;
 
 import java.util.*;

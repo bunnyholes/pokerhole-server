@@ -1,6 +1,4 @@
-package dev.xiyo.pokerhole.dealer;
-
-import dev.xiyo.pokerhole.common.*;
+package dev.xiyo.pokerhole.core.domain.card;
 
 import java.util.*;
 
@@ -9,7 +7,7 @@ import java.util.*;
  * 이 클래스는 같은 패키지 내에서만 접근 가능합니다.
  * 외부에서 직접 Deck을 수정하거나 생성하지 못하게 하여 일관된 덱 관리가 가능하게 합니다.
  */
-class Deck {
+public class Deck {
     /**
      * 덱을 구성하는 카드들
      * 재사용이 불가능하도록 카드를 뽑을 때마다 제거되도록 큐의 특성을 활용하는 리스트로 구성
@@ -40,7 +38,7 @@ class Deck {
      * Deck 생성자를 직접 호출하지 않고 이 정적 메서드를 통해서만 덱을 만들 수 있습니다.
      * 이렇게 함으로써 덱이 생성되는 방식을 제어할 수 있습니다.
      */
-    static Deck newDeck() {
+    public static Deck newDeck() {
         return new Deck();
     }
 
@@ -64,7 +62,7 @@ class Deck {
      * 딜러만 이 메서드를 호출할 수 있도록 default 접근 제어자를 사용하여 같은 패키지 내에서만 접근 가능하게 합니다.
      * Random 객체를 사용하여 카드의 순서를 무작위로 섞습니다.
      */
-    void shuffle() {
+    public void shuffle() {
         Collections.shuffle(this.cards, new Random());
     }
 }

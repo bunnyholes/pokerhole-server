@@ -1,4 +1,4 @@
-package dev.xiyo.pokerhole.common;
+package dev.xiyo.pokerhole.core.domain.card;
 
 public enum Suit {
     CLUBS("♣️"),
