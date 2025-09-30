@@ -1,8 +1,8 @@
 package dev.xiyo.pokerhole.announcer;
 
-import dev.xiyo.pokerhole.common.Hand;
+import dev.xiyo.pokerhole.core.domain.card.Hand;
 import dev.xiyo.pokerhole.dealer.Dealer;
-import dev.xiyo.pokerhole.player.Player;
+import dev.xiyo.pokerhole.core.domain.player.Player;
 
 import java.util.*;
 
