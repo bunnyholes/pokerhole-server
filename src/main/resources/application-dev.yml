@@ -1,0 +1,31 @@
+# Development configuration
+spring:
+  application:
+    name: pokerhole
+
+# Enable debug logging for development
+logging:
+  level:
+    dev.xiyo.pokerhole: DEBUG
+    org.springframework.web: INFO
+
+# Development-specific game settings
+pokerhole:
+  game:
+    initial-chips: 50000  # More chips for testing
+    round-timeout-seconds: 120  # Longer timeout for debugging
+  
+  matching:
+    wait-timeout-seconds: 10  # Faster AI injection for testing
+    queue-process-interval-ms: 2000  # More frequent processing
+
+# Actuator endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: pokerhole
+      environment: dev

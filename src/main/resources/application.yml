@@ -3,4 +3,20 @@ pokerhole:
     enabled: true
     host: 0.0.0.0
     port: 7777
-
+  
+  game:
+    initial-chips: 10000
+    minimum-bet: 100
+    blind-amount: 50
+    max-players: 10
+    min-players: 2
+    round-timeout-seconds: 60
+  
+  matching:
+    auto-matching-enabled: true
+    wait-timeout-seconds: 30
+    queue-process-interval-ms: 5000
+    players-per-game: 4
+    ai-player-enabled: true
+    code-matching-enabled: true
+    code-expiration-minutes: 30
