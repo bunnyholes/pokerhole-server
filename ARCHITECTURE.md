@@ -1,8 +1,27 @@
-# Hexagonal Architecture + DDD Migration - Complete ✅
+# Hexagonal Architecture + DDD Migration - v2.0 Enhanced 🎮
 
 ## Overview
 
-This migration successfully restructured the PokerHole codebase from a traditional layered architecture to **Hexagonal Architecture (Ports & Adapters)** following **Domain-Driven Design (DDD)** principles.
+This is an enhanced version of the PokerHole codebase, further evolving the **Hexagonal Architecture (Ports & Adapters)** with **Domain-Driven Design (DDD)** principles and modern Spring Boot 4.x features.
+
+## Recent Enhancements (v2.0)
+
+### ✅ Build System Modernization
+- **Kotlin DSL** - Migrated from Groovy to Kotlin DSL (build.gradle.kts)
+- **Spring Boot 4.0.0-M3** - Latest milestone release
+- **Java 21** - Using Java 21 toolchain with Virtual Threads support
+- **Gradle 9.x** - Latest Gradle version
+- **Enhanced Dependencies**:
+  - MapStruct for object mapping
+  - JLine 3.27.1 for enhanced terminal UI
+  - Quartz Scheduler for background jobs
+  - Problem Details (RFC 7807) for standardized error responses
+  - OpenAPI 3.1 (springdoc) for API documentation
+  - Micrometer & Prometheus for metrics
+  - TestContainers for integration testing
+  - ArchUnit for architecture testing
+  - Awaitility for async testing
+  - PITest for mutation testing
 
 ## Key Achievements
 
@@ -11,8 +30,25 @@ This migration successfully restructured the PokerHole codebase from a tradition
 - **Card domain** - Card, Rank, Suit, Tier, Hand, Deck
 - **Player domain** - Player, PlayerRecord
 - **Game domain** - GameId, GameState (foundation for Game aggregate)
+- **Value Objects** ✨:
+  - PlayerId - Player identifier with UUID
+  - Nickname - Validated player nickname
+  - Pot - Immutable pot value object
+  - BettingRound - Poker betting round enum
+- **Domain Events** ✨:
+  - GameEvent - Sealed interface for type-safe events
+  - RoundStarted - Round start event
+  - RoundEnded - Round end event with winner info
+  - BettingPhaseStarted - Betting phase start event
 - **Shared abstractions** - DomainEvent, AggregateRoot interfaces
 - **Domain exceptions** - DomainException, GameException, RoomException
+
+### ✅ Application Layer (Use Cases) ✨
+- **Custom @UseCase annotation** - Marks application service classes
+- **Port Interfaces**:
+  - Input Ports - StartRoundUseCase with command DTOs
+  - Output Ports - EventPublisher interface
+- **Command Pattern** - StartRoundCommand with validation
 
 ### ✅ Adapter Layer (Infrastructure)
 **Driving Adapters (Input)**:
@@ -23,7 +59,8 @@ This migration successfully restructured the PokerHole codebase from a tradition
 **Driven Adapters (Output)**:
 - Network adapters (`adapter/out/network`) - TCP server, session management
 - Persistence adapters (`adapter/out/persistence/jpa`) - JPA entities, repositories
-- Ready for more adapters - Notification, gateway, etc.
+- **Event adapter** ✨ (`adapter/out/event`) - SpringEventPublisher for domain events
+- Ready for more adapters - Cache (Redis), Notification, Gateway, etc.
 
 ### ✅ UI Layer (Presentation)
 - **CLI components** (`ui/cli`) - Terminal rendering and interaction
@@ -31,11 +68,12 @@ This migration successfully restructured the PokerHole codebase from a tradition
 - **Renderers** (`ui/cli/render`) - Rendering logic separated from business logic
 - **Complete separation** - UI doesn't depend on domain internals
 
-### ✅ Configuration Layer
+### ✅ Configuration Layer ✨
 - Centralized Spring Boot configuration
-- Properties management
+- **Properties management** - GameProperties, MatchingProperties, TerminalGatewayProperties
+- **PropertiesConfig** - Enables all configuration properties
 - WebSocket configuration
-- Terminal gateway properties
+- Terminal gateway configuration
 
 ## Architecture Diagram
 
@@ -67,9 +105,17 @@ dev.xiyo.pokerhole/
 │   ├── domain/
 │   │   ├── card/              # Card entities
 │   │   ├── player/            # Player aggregate
-│   │   ├── game/              # Game domain (started)
+│   │   │   └── vo/            # ✨ PlayerId, Nickname value objects
+│   │   ├── game/              # Game domain
+│   │   │   ├── event/         # ✨ GameEvent, RoundStarted, RoundEnded, etc.
+│   │   │   └── vo/            # ✨ BettingRound, Pot value objects
 │   │   └── shared/            # Shared abstractions
-│   ├── application/           # (Ready for use cases)
+│   ├── application/           # ✨ Use cases and ports
+│   │   ├── UseCase.java       # ✨ Custom annotation
+│   │   └── port/
+│   │       ├── in/            # ✨ Input ports (use cases)
+│   │       │   └── game/      # ✨ StartRoundUseCase, DTOs
+│   │       └── out/           # ✨ Output ports (repositories, etc.)
 │   └── common/
 │       └── exception/         # Domain exceptions
 │
@@ -79,24 +125,55 @@ dev.xiyo.pokerhole/
 │   │   └── web/               # WebSocket
 │   └── out/                   # Output ports
 │       ├── network/           # TCP, Sessions
-│       └── persistence/       # JPA
+│       ├── persistence/       # JPA
+│       └── event/             # ✨ SpringEventPublisher
 │
 ├── ui/                        # 🟢 Presentation
 │   ├── cli/                   # CLI components
 │   └── model/                 # View models
 │
-└── configuration/             # 🟡 Spring Config
-    └── properties/
+├── configuration/             # 🟡 Spring Config
+│   ├── PropertiesConfig.java  # ✨ Configuration properties enabler
+│   └── properties/            # ✨ GameProperties, MatchingProperties, etc.
+│
+├── server/                    # 🔶 Legacy server layer (to be migrated)
+│   └── room/                  # Room management
+│
+└── dealer/                    # 🔶 Legacy dealer (to be refactored)
 ```
 
 ## Migration Statistics
 
-- **📦 Packages created**: 15+ new packages
-- **📄 Files reorganized**: 40+ files moved
-- **🔗 Imports updated**: 100+ import statements
+- **📦 Packages created**: 20+ new packages
+- **📄 Files reorganized**: 50+ files moved/created
+- **🔗 Imports updated**: 150+ import statements
 - **✅ Tests passing**: 100%
 - **🏗️ Build status**: SUCCESS
 - **⚡ Functionality**: Fully preserved
+
+### v2.0 Additions
+- **🎯 Value Objects**: 4 new immutable value objects
+- **📡 Domain Events**: 4 event types with sealed interfaces
+- **🔌 Application Ports**: Use case interfaces and command DTOs
+- **⚙️ Configuration Properties**: 3 property classes
+- **🧪 Architecture Tests**: ArchUnit tests for dependency rules
+- **🛠️ Build System**: Kotlin DSL with 15+ new dependencies
+
+## Testing Infrastructure ✨
+
+### Architecture Tests
+- **ArchUnit integration** - Validates hexagonal architecture rules
+- **Domain isolation** - Ensures domain has no external dependencies
+- **Layer independence** - Verifies application doesn't depend on adapters
+- Tests located in `src/test/java/.../architecture/`
+
+### Testing Dependencies
+- **TestContainers** - Integration testing with real databases
+- **ArchUnit** - Architecture compliance testing
+- **Awaitility** - Async operation testing
+- **PITest** - Mutation testing for test quality
+- **AssertJ** - Fluent assertions
+- **Mockito** - Mocking framework
 
 ## Benefits Achieved
 
