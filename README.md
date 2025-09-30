@@ -72,10 +72,10 @@ wscat -c ws://localhost:8080/ws/terminal
 브라우저에서 직접 접속하려면 `xterm.js` 등 터미널 UI 컴포넌트로 해당 WebSocket 엔드포인트를 바인딩하면 됩니다.
 
 ## 패키지 구조
-- `com.pokerhole.server.room`: 방 생성 및 게임 라운드 관리
-- `com.pokerhole.server.session`: 접속 세션 추상화
-- `com.pokerhole.server.terminal`: TCP 터미널 서버 및 명령 처리기 (Java 21 Virtual Thread 활용)
-- `com.pokerhole.server.websocket`: WebSocket 터미널 핸들러
+- `dev.xiyo.pokerhole.server.room`: 방 생성 및 게임 라운드 관리
+- `dev.xiyo.pokerhole.server.session`: 접속 세션 추상화
+- `dev.xiyo.pokerhole.server.terminal`: TCP 터미널 서버 및 명령 처리기 (Java 21 Virtual Thread 활용)
+- `dev.xiyo.pokerhole.server.websocket`: WebSocket 터미널 핸들러
 
 ## 테스트 실행
 ```bash
