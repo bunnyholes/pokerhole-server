@@ -1,4 +1,7 @@
-package dev.xiyo.pokerhole.cli;
+package dev.xiyo.pokerhole.ui.cli;
+
+import dev.xiyo.pokerhole.ui.model.PokerCliTableState;
+import dev.xiyo.pokerhole.ui.model.PokerCliViewModel;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

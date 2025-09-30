@@ -1,4 +1,4 @@
-package dev.xiyo.pokerhole.cli;
+package dev.xiyo.pokerhole.ui.model;
 
 import java.time.Instant;
 import java.util.List;

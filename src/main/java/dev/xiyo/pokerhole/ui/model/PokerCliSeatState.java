@@ -1,4 +1,6 @@
-package dev.xiyo.pokerhole.cli;
+package dev.xiyo.pokerhole.ui.model;
+
+import dev.xiyo.pokerhole.ui.cli.SeatPosition;
 
 import java.util.List;
 

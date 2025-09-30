@@ -1,5 +1,8 @@
-package dev.xiyo.pokerhole.cli;
+package dev.xiyo.pokerhole.ui.cli.render;
 
+import dev.xiyo.pokerhole.ui.model.PokerCliSeatState;
+import dev.xiyo.pokerhole.ui.model.PokerCliViewModel;
+import dev.xiyo.pokerhole.ui.cli.SeatPosition;
 import org.jline.terminal.Terminal;
 
 import java.io.IOException;

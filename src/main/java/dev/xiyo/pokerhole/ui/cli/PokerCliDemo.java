@@ -1,5 +1,8 @@
-package dev.xiyo.pokerhole.cli;
+package dev.xiyo.pokerhole.ui.cli;
 
+import dev.xiyo.pokerhole.ui.model.PokerCliSeatState;
+import dev.xiyo.pokerhole.ui.model.PokerCliTableState;
+import dev.xiyo.pokerhole.ui.cli.render.PokerCliRenderer;
 import org.jline.keymap.BindingReader;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Terminal;
