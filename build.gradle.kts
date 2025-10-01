@@ -62,6 +62,10 @@ dependencies {
     // Terminal UI
     implementation("org.jline:jline:3.27.1")
     implementation("org.jline:jline-terminal-jansi:3.27.1")
+
+    // SSH Server
+    implementation("org.apache.sshd:sshd-core:2.14.0")
+    implementation("org.apache.sshd:sshd-common:2.14.0")
     
     // Scheduling (AI 투입, 자동 충전)
     implementation("org.springframework.boot:spring-boot-starter-quartz")

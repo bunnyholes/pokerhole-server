@@ -1,6 +1,8 @@
 package dev.xiyo.pokerhole.adapter.out.network.tcp;
 
 import dev.xiyo.pokerhole.adapter.in.terminal.TerminalCommandProcessor;
+import dev.xiyo.pokerhole.adapter.in.terminal.TerminalUIController;
+import dev.xiyo.pokerhole.adapter.out.network.session.SessionRegistry;
 import dev.xiyo.pokerhole.configuration.properties.TerminalGatewayProperties;
 
 import jakarta.annotation.PostConstruct;
@@ -24,6 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TerminalTcpServer {
 
     private final TerminalCommandProcessor commandProcessor;
+    private final TerminalUIController uiController;
+    private final SessionRegistry sessionRegistry;
     private final TerminalGatewayProperties properties;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -50,7 +54,8 @@ public class TerminalTcpServer {
                     .daemon(true)
                     .start(this::acceptLoop);
 
-            log.info("Terminal TCP 서버가 {}:{} 에서 대기 중입니다.", properties.getHost(), properties.getPort());
+            log.info("Terminal TCP 서버가 {}:{} 에서 대기 중입니다. (Full-Screen TUI 모드)",
+                    properties.getHost(), properties.getPort());
         }
     }
 
@@ -83,7 +88,13 @@ public class TerminalTcpServer {
                 Socket socket = serverSocket.accept();
                 socket.setTcpNoDelay(true);
                 socket.setKeepAlive(true);
-                clientExecutor.submit(new TerminalClientConnection(socket, commandProcessor));
+
+                // Full-Screen TUI 연결 생성
+                clientExecutor.submit(new TerminalFullScreenConnection(
+                        socket,
+                        uiController,
+                        sessionRegistry
+                ));
             } catch (SocketException ex) {
                 if (running.get()) {
                     log.warn("터미널 서버 소켓 오류: {}", ex.getMessage());
