@@ -39,4 +39,5 @@ bin/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_Storeclient/poker-client-new
+client/poker-client
