@@ -2,7 +2,6 @@ package dev.xiyo.pokerhole.configuration;
 
 import dev.xiyo.pokerhole.configuration.properties.GameProperties;
 import dev.xiyo.pokerhole.configuration.properties.MatchingProperties;
-import dev.xiyo.pokerhole.configuration.properties.TerminalGatewayProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,8 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
     GameProperties.class,
-    MatchingProperties.class,
-    TerminalGatewayProperties.class
+    MatchingProperties.class
 })
 public class PropertiesConfig {
 }

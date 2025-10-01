@@ -1,6 +1,6 @@
 package dev.xiyo.pokerhole.adapter.out.network.session;
 
-import dev.xiyo.pokerhole.adapter.in.terminal.state.TerminalSessionContext;
+import dev.xiyo.pokerhole.adapter.out.network.session.model.SessionState;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -9,26 +9,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 세션 레지스트리
- * 세션 ID와 TerminalSessionContext 매핑 관리
+ * 세션 ID와 SessionState 매핑 관리
  */
 @Slf4j
 @Component
 public class SessionRegistry {
 
-    private final ConcurrentHashMap<String, TerminalSessionContext> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SessionState> sessions = new ConcurrentHashMap<>();
 
     /**
      * 세션 등록
      */
-    public void register(String sessionId, TerminalSessionContext context) {
-        sessions.put(sessionId, context);
+    public void register(String sessionId, SessionState state) {
+        sessions.put(sessionId, state);
         log.info("세션 등록: sessionId={}", sessionId);
     }
 
     /**
      * 세션 조회
      */
-    public Optional<TerminalSessionContext> findById(String sessionId) {
+    public Optional<SessionState> findById(String sessionId) {
         return Optional.ofNullable(sessions.get(sessionId));
     }
 
@@ -36,7 +36,7 @@ public class SessionRegistry {
      * 세션 제거
      */
     public void unregister(String sessionId) {
-        TerminalSessionContext removed = sessions.remove(sessionId);
+        SessionState removed = sessions.remove(sessionId);
         if (removed != null) {
             log.info("세션 제거: sessionId={}", sessionId);
         }
