@@ -1,12 +1,12 @@
-# PokerHole - 텍사스 홀덤 포커 게임 서버
+# PokerHole Server
 
-> Spring Boot 4.x + Java 21 기반의 멀티플레이어 포커 게임 서버
+> Spring Boot 4.x + Java 21 기반의 멀티플레이어 텍사스 홀덤 포커 게임 서버
 
 ---
 
 ## 프로젝트 개요
 
-PokerHole은 Hexagonal Architecture와 Domain-Driven Design 원칙을 따르는 현대적인 포커 게임 서버입니다. 터미널(TCP)과 웹 브라우저(WebSocket)를 통해 접속하여 실시간 멀티플레이어 포커 게임을 즐길 수 있습니다.
+PokerHole Server는 Hexagonal Architecture와 Domain-Driven Design 원칙을 따르는 현대적인 포커 게임 서버입니다. WebSocket을 통해 클라이언트와 통신하며 실시간 멀티플레이어 포커 게임을 제공합니다.
 
 ### 주요 특징
 
@@ -227,71 +227,27 @@ open build/reports/jacoco/test/html/index.html
 
 ---
 
-## 문서
+## Documentation
 
-- **[PRD.md](./PRD.md)** - 전체 프로젝트 요구사항 및 구현 계획
-  - Phase별 상세 작업 (체크박스로 진행 상황 추적)
-  - 도메인 모델 상세 명세
-  - Use Case 정의
-  - 품질 기준 및 메트릭
-  - 향후 로드맵
-
-- **[Claude.MD](./Claude.MD)** - 개발 실행 계획 및 로드맵
-  - 현재 상태 요약 및 우선순위
-  - Task별 상세 구현 계획 (예상 기간, 복잡도 포함)
-  - 주차별 실행 계획
-  - 기술적 고려사항 및 품질 기준
-  - 알려진 이슈 및 기술 부채
-
----
-## 현재 상태
-
-### 완료 (Phase 1-5)
-- Phase 1: 인프라 & 아키텍처 기반
-- Phase 2: 핵심 도메인 모델 (Card, Player, Game, Matching, AI)
-- Phase 3: 어댑터 레이어 (Terminal, WebSocket, JPA, Event, AI)
-- Phase 4: 터미널 UI 및 게임 플로우
-- Phase 5: 기본 게임 로직 통합 (부분)
-
-### 진행 중 (Phase 6)
-- 포커 핸드 평가 시스템
-- 베팅 라운드 관리
-- MapStruct 매퍼 통합
-
-### 예정 (Phase 7-8)
-- Phase 7: 테스트 및 품질 보증 (2026-06)
-- Phase 8: 고급 기능 (관전, 채팅, 리더보드, 토너먼트)
-
-### 향후 로드맵
-- v1.0 (2026-06): 완전한 텍사스 홀덤 포커 서버 (MVP)
-- v1.1 (2026-09): 관전 모드, 채팅, 리더보드
-- v1.2 (2026-12): 토너먼트, 성능 최적화, 모니터링
-- v2.0 (2027-06): REST API, React 웹 UI
-- v2.1 (2027-12): 모바일 앱, 소셜 기능
-- v3.0 (2028-06): 머신러닝 AI, 글로벌 확장
-
-상세한 로드맵은 [PRD.md의 "향후 로드맵" 섹션](./PRD.md#향후-로드맵)을 참조하세요.
+- **[ROADMAP.md](ROADMAP.md)** - Complete development roadmap and phase plans
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architecture design and patterns
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines and coding standards
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
 
 ---
 
-## 문서
+## Current Status
 
-### 핵심 문서
-- [PRD.md](./PRD.md): 전체 프로젝트 요구사항 및 구현 계획 (v3.0)
-  - Phase별 상세 작업 (체크박스로 진행 상황 추적)
-  - 개발 규칙 (MapStruct 매퍼, 네이밍, 테스트)
-  - 도메인 모델 상세 명세
-  - Use Case 정의
-  - 1-2년 로드맵 (v1.0 ~ v3.0)
-  - 리스크 관리
+**Overall Progress**: ~35-40%
 
-### 주요 내용
-- 개발 규칙: MapStruct 매퍼 위치 및 작성 규칙
-- Phase 6 상세 계획: 포커 핸드 평가, 베팅 액션, 팟 관리 (6개월)
-- Phase 7 테스트 계획: 500개 이상 단위 테스트, 85% 이상 커버리지 (3개월)
-- Phase 8 고급 기능: 관전, 채팅, 리더보드, 토너먼트 (6개월)
-- v2.0 웹 플랫폼: REST API, React UI (6개월)
-- v3.0 글로벌 서비스: ML AI, Multi-Region (6개월)
+- **Phase 1-4**: Completed (Infrastructure, Domain, Adapters, UI)
+- **Phase 5**: 70% (Game logic integration, Room management pending)
+- **Phase 6**: 11% (Hand evaluator done, 8 tasks remaining)
+- **Phase 7-8**: Pending (Testing, Advanced features)
+
+**Latest Milestone**: Phase 6 Task 6.1 - Hand Evaluation System (2025-10-02)
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed release history.
 
 ---
 
@@ -341,8 +297,12 @@ MIT License
 
 ---
 
+## Related Projects
+
+- [PokerHole CLI](https://github.com/bunnyholes/pokerhole-cli) - Go-based terminal client
+
 ## 연락처
 
 프로젝트 관리자: [@xiyo](https://github.com/xiyo)
 
-프로젝트 링크: [https://github.com/bunnyholes/pokerhole](https://github.com/bunnyholes/pokerhole)
+프로젝트 링크: [https://github.com/bunnyholes/pokerhole-server](https://github.com/bunnyholes/pokerhole-server)
