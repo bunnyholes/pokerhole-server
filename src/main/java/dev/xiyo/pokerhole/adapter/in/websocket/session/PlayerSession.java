@@ -17,6 +17,10 @@ public class PlayerSession {
     private final String nickname;
     private final Instant connectedAt;
 
+    // 현재 상태 추적
+    private String currentRoomId;
+    private String currentMatchingId;
+
     /**
      * 세션이 열려있는지 확인
      */
@@ -29,6 +33,49 @@ public class PlayerSession {
      */
     public String getSessionId() {
         return webSocketSession.getId();
+    }
+
+    /**
+     * 방에 참가
+     */
+    public void joinRoom(String roomId) {
+        this.currentRoomId = roomId;
+        this.currentMatchingId = null; // 매칭 완료
+    }
+
+    /**
+     * 매칭 시작
+     */
+    public void joinMatching(String matchingId) {
+        this.currentMatchingId = matchingId;
+    }
+
+    /**
+     * 방에서 나가기
+     */
+    public void leaveRoom() {
+        this.currentRoomId = null;
+    }
+
+    /**
+     * 매칭 취소
+     */
+    public void leaveMatching() {
+        this.currentMatchingId = null;
+    }
+
+    /**
+     * 현재 방에 있는지 확인
+     */
+    public boolean isInRoom() {
+        return currentRoomId != null;
+    }
+
+    /**
+     * 현재 매칭 중인지 확인
+     */
+    public boolean isMatching() {
+        return currentMatchingId != null;
     }
 
     /**
