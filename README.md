@@ -341,19 +341,16 @@ ws://localhost:8080/ws/game
 
 ## Testing
 
-### Test Breakdown (502 tests)
+### Current Test Coverage (31 tests)
 
-| Category | Count | Coverage |
-|----------|-------|----------|
-| Domain logic | ~400 | 100% |
-| JPA persistence | ~25 | 90% |
-| Event store | ~9 | 100% |
-| Architecture | ~4 | 100% |
-| Golden vectors | ~8 | 100% |
-| WebSocket | ~20 | 85% |
-| Matching | ~7 | 90% |
-| Other | ~29 | varies |
-| **Total** | **502** | **~95%** |
+| Test Class | Description | Status |
+|------------|-------------|--------|
+| HandEvaluatorTest | Hand evaluation (21 golden vectors) | ✅ Pass |
+| HexagonalArchitectureTest | Architecture rule enforcement | ✅ Pass |
+| GuestVisitServiceTest | JPA persistence | ✅ Pass |
+| PokerHoleApplicationTest | Application context | ✅ Pass |
+
+**Note**: Full test suite (~500+ tests) planned for Phase 1 completion (Step 4-5).
 
 ### Running Tests
 
@@ -697,8 +694,9 @@ MIT License
 
 **Last Updated**: 2025-10-03
 
-- **Tests**: 502 tests, 100% pass
-- **Phase**: 1 core complete (~75%)
+- **Tests**: 31 tests, 100% pass
+- **Phase**: 1 WebSocket integration (~60% complete)
+- **Step 4**: GameCommandService structure complete (game logic TODO)
 - **Production**: Not ready (Phase 5 planned)
 
-**Next Milestone**: Complete GameRoom integration (Phase 1 completion)
+**Next Milestone**: Server-client protocol alignment (see /NEXT-STEP.md)

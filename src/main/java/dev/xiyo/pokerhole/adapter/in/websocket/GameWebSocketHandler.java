@@ -36,6 +36,9 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     private final JoinCodeMatchingUseCase joinCodeMatchingUseCase;
     private final CancelMatchingUseCase cancelMatchingUseCase;
 
+    // Game Command Service
+    private final dev.xiyo.pokerhole.adapter.in.websocket.service.GameCommandService gameCommandService;
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         guestVisitService.recordVisit(session.getId());
@@ -249,8 +252,45 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleGameAction(WebSocketSession session, String action, Map<String, Object> payload) {
-        // TODO: 게임 액션 처리 로직
-        log.info("게임 액션: sessionId={}, action={}, payload={}", session.getId(), action, payload);
+        PlayerSession playerSession = sessionRegistry.findBySessionId(session.getId())
+                .orElseThrow(() -> new IllegalStateException("등록되지 않은 세션입니다."));
+
+        // 방에 참가 중인지 확인
+        if (!playerSession.isInRoom()) {
+            sendError(session, "방에 참가하지 않았습니다.");
+            return;
+        }
+
+        try {
+            Integer amount = null;
+            if ("RAISE".equals(action) && payload != null) {
+                Object amountObj = payload.get("amount");
+                if (amountObj instanceof Integer) {
+                    amount = (Integer) amountObj;
+                } else if (amountObj instanceof Number) {
+                    amount = ((Number) amountObj).intValue();
+                }
+
+                if (amount == null || amount <= 0) {
+                    sendError(session, "RAISE 액션에는 유효한 금액이 필요합니다.");
+                    return;
+                }
+            }
+
+            // GameCommandService에 위임
+            gameCommandService.executeAction(session.getId(), action, amount);
+
+            log.info("게임 액션 처리 완료: sessionId={}, action={}, amount={}",
+                    session.getId(), action, amount);
+
+        } catch (IllegalStateException e) {
+            log.warn("잘못된 게임 액션: sessionId={}, action={}", session.getId(), action, e);
+            sendMessage(session, ServerMessage.of(ServerMessageType.ERROR,
+                    Map.of("message", e.getMessage())));
+        } catch (Exception e) {
+            log.error("게임 액션 처리 실패: sessionId={}, action={}", session.getId(), action, e);
+            sendError(session, "게임 액션 처리 중 오류가 발생했습니다.");
+        }
     }
 
     /**
@@ -290,17 +330,26 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
+        // 방에 참가 중인지 확인
+        if (!playerSession.isInRoom()) {
+            sendError(session, "방에 참가하지 않았습니다.");
+            return;
+        }
+
         log.info("채팅 메시지: sessionId={}, nickname={}, message={}",
                 session.getId(), playerSession.getNickname(), message);
 
-        // TODO: 같은 방에 있는 플레이어들에게 브로드캐스트
-        // 현재는 자신에게만 에코
-        sendMessage(session, ServerMessage.of(ServerMessageType.CHAT_MESSAGE,
-                Map.of(
-                        "nickname", playerSession.getNickname(),
-                        "message", message,
-                        "timestamp", System.currentTimeMillis()
-                )));
+        // GameCommandService를 통해 같은 방 플레이어들에게 브로드캐스트
+        try {
+            gameCommandService.broadcastChatMessage(
+                    playerSession.getCurrentRoomId(),
+                    playerSession.getNickname(),
+                    message
+            );
+        } catch (Exception e) {
+            log.error("채팅 메시지 브로드캐스트 실패: sessionId={}", session.getId(), e);
+            sendError(session, "채팅 메시지 전송에 실패했습니다.");
+        }
     }
 
     /**
