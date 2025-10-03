@@ -5,6 +5,8 @@ import dev.xiyo.pokerhole.adapter.in.websocket.message.*;
 import dev.xiyo.pokerhole.adapter.in.websocket.session.PlayerSession;
 import dev.xiyo.pokerhole.adapter.in.websocket.session.WebSocketSessionRegistry;
 import dev.xiyo.pokerhole.adapter.out.persistence.jpa.adapter.GuestVisitService;
+import dev.xiyo.pokerhole.core.application.port.in.matching.*;
+import dev.xiyo.pokerhole.core.domain.matching.MatchingRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,11 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     private final MessageCodec messageCodec;
     private final WebSocketSessionRegistry sessionRegistry;
     private final GuestVisitService guestVisitService;
+
+    // Matching Use Cases
+    private final JoinRandomMatchingUseCase joinRandomMatchingUseCase;
+    private final JoinCodeMatchingUseCase joinCodeMatchingUseCase;
+    private final CancelMatchingUseCase cancelMatchingUseCase;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -144,30 +151,94 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
      * 랜덤 매칭 참가
      */
     private void handleJoinRandomMatch(WebSocketSession session) {
-        // TODO: 매칭 시스템 연동
-        log.info("랜덤 매칭 요청: sessionId={}", session.getId());
-        sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_STARTED,
-                Map.of("message", "매칭을 시작합니다...")));
+        PlayerSession playerSession = sessionRegistry.findBySessionId(session.getId())
+                .orElseThrow(() -> new IllegalStateException("등록되지 않은 세션입니다."));
+
+        log.info("랜덤 매칭 요청: sessionId={}, nickname={}", session.getId(), playerSession.getNickname());
+
+        try {
+            var command = new JoinRandomMatchingUseCase.JoinRandomMatchingCommand(
+                    session.getId(),
+                    playerSession.getNickname()
+            );
+            MatchingRequest request = joinRandomMatchingUseCase.joinRandomMatching(command);
+
+            // 세션 상태 업데이트
+            playerSession.joinMatching(request.getRequestId().toString());
+
+            sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_STARTED,
+                    Map.of(
+                            "requestId", request.getRequestId(),
+                            "message", "매칭을 시작합니다..."
+                    )));
+        } catch (Exception e) {
+            log.error("랜덤 매칭 실패: sessionId={}", session.getId(), e);
+            sendError(session, "매칭 시작 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     /**
      * 코드 매칭 참가
      */
     private void handleJoinCodeMatch(WebSocketSession session, Map<String, Object> payload) {
-        // TODO: 코드 매칭 시스템 연동
+        PlayerSession playerSession = sessionRegistry.findBySessionId(session.getId())
+                .orElseThrow(() -> new IllegalStateException("등록되지 않은 세션입니다."));
+
         String code = payload != null ? (String) payload.get("code") : null;
-        log.info("코드 매칭 요청: sessionId={}, code={}", session.getId(), code);
-        sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_STARTED,
-                Map.of("message", "코드 매칭을 시작합니다...")));
+
+        if (code == null || code.isBlank()) {
+            sendError(session, "매칭 코드가 필요합니다.");
+            return;
+        }
+
+        log.info("코드 매칭 요청: sessionId={}, nickname={}, code={}",
+                session.getId(), playerSession.getNickname(), code);
+
+        try {
+            var command = new JoinCodeMatchingUseCase.JoinCodeMatchingCommand(
+                    session.getId(),
+                    playerSession.getNickname(),
+                    code
+            );
+            MatchingRequest request = joinCodeMatchingUseCase.joinCodeMatching(command);
+
+            // 세션 상태 업데이트
+            playerSession.joinMatching(request.getRequestId().toString());
+
+            sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_STARTED,
+                    Map.of(
+                            "requestId", request.getRequestId(),
+                            "code", code,
+                            "message", "코드 매칭을 시작합니다..."
+                    )));
+        } catch (Exception e) {
+            log.error("코드 매칭 실패: sessionId={}, code={}", session.getId(), code, e);
+            sendError(session, "코드 매칭 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     /**
      * 매칭 취소
      */
     private void handleCancelMatching(WebSocketSession session) {
-        // TODO: 매칭 취소 로직
+        PlayerSession playerSession = sessionRegistry.findBySessionId(session.getId())
+                .orElseThrow(() -> new IllegalStateException("등록되지 않은 세션입니다."));
+
         log.info("매칭 취소 요청: sessionId={}", session.getId());
-        sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_CANCELLED));
+
+        try {
+            cancelMatchingUseCase.cancelMatching(session.getId());
+
+            // 세션 상태 업데이트
+            playerSession.leaveMatching();
+
+            sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_CANCELLED,
+                    Map.of("message", "매칭이 취소되었습니다.")));
+        } catch (Exception e) {
+            log.warn("매칭 취소 실패 (매칭 중이 아닐 수 있음): sessionId={}", session.getId(), e);
+            sendMessage(session, ServerMessage.of(ServerMessageType.MATCHING_CANCELLED,
+                    Map.of("message", "매칭이 취소되었습니다.")));
+        }
     }
 
     /**
@@ -186,17 +257,50 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
      * 게임 나가기
      */
     private void handleLeaveGame(WebSocketSession session) {
-        // TODO: 게임 나가기 로직
-        log.info("게임 나가기 요청: sessionId={}", session.getId());
+        PlayerSession playerSession = sessionRegistry.findBySessionId(session.getId())
+                .orElseThrow(() -> new IllegalStateException("등록되지 않은 세션입니다."));
+
+        log.info("게임 나가기 요청: sessionId={}, roomId={}", session.getId(), playerSession.getCurrentRoomId());
+
+        // 현재 방에 있는지 확인
+        if (!playerSession.isInRoom()) {
+            sendError(session, "현재 방에 참가하고 있지 않습니다.");
+            return;
+        }
+
+        // TODO: GameRoom에서 플레이어 제거 및 다른 참가자들에게 알림
+        // 현재는 세션 상태만 업데이트
+        playerSession.leaveRoom();
+
+        sendMessage(session, ServerMessage.of(ServerMessageType.GAME_ENDED,
+                Map.of("message", "게임에서 나갔습니다.")));
     }
 
     /**
      * 채팅 메시지
      */
     private void handleChatMessage(WebSocketSession session, Map<String, Object> payload) {
-        // TODO: 채팅 메시지 브로드캐스트
+        PlayerSession playerSession = sessionRegistry.findBySessionId(session.getId())
+                .orElseThrow(() -> new IllegalStateException("등록되지 않은 세션입니다."));
+
         String message = payload != null ? (String) payload.get("message") : null;
-        log.info("채팅 메시지: sessionId={}, message={}", session.getId(), message);
+
+        if (message == null || message.isBlank()) {
+            sendError(session, "채팅 메시지가 필요합니다.");
+            return;
+        }
+
+        log.info("채팅 메시지: sessionId={}, nickname={}, message={}",
+                session.getId(), playerSession.getNickname(), message);
+
+        // TODO: 같은 방에 있는 플레이어들에게 브로드캐스트
+        // 현재는 자신에게만 에코
+        sendMessage(session, ServerMessage.of(ServerMessageType.CHAT_MESSAGE,
+                Map.of(
+                        "nickname", playerSession.getNickname(),
+                        "message", message,
+                        "timestamp", System.currentTimeMillis()
+                )));
     }
 
     /**

@@ -21,6 +21,9 @@ public enum ServerMessageType {
     ROUND_COMPLETED,    // 라운드 종료
     GAME_ENDED,         // 게임 종료
 
+    // 채팅
+    CHAT_MESSAGE,       // 채팅 메시지
+
     // 에러
     ERROR,              // 일반 에러
     INVALID_ACTION      // 잘못된 액션
