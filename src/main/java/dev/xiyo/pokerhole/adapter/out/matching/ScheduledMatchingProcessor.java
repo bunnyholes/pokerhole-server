@@ -1,5 +1,6 @@
 package dev.xiyo.pokerhole.adapter.out.matching;
 
+import dev.xiyo.pokerhole.configuration.properties.GameProperties;
 import dev.xiyo.pokerhole.configuration.properties.MatchingProperties;
 import dev.xiyo.pokerhole.core.application.port.in.ai.RequestAIPlayerUseCase;
 import dev.xiyo.pokerhole.core.application.port.out.matching.MatchingNotificationPort;
@@ -32,6 +33,7 @@ public class ScheduledMatchingProcessor {
     private final MatchingNotificationPort notificationPort;
     private final ApplicationEventPublisher eventPublisher;
     private final MatchingProperties properties;
+    private final GameProperties gameProperties;
 
     /**
      * 매칭 큐 처리 (5초마다)
@@ -102,11 +104,15 @@ public class ScheduledMatchingProcessor {
                 List<AIPlayer> aiPlayers = requestAIPlayerUseCase.requestAIPlayers(
                         RequestAIPlayerUseCase.RequestAIPlayerCommand.of(
                                 requiredAI,
-                                properties.getGameProperties().getInitialChips()
+                                gameProperties.getInitialChips()
                         )
                 );
 
                 log.info("AI 플레이어 투입: {} 명", aiPlayers.size());
+
+                // 큐에서 타임아웃된 요청 제거 (중복 처리 방지)
+                timedOutRequests.forEach(request ->
+                        queuePort.removeBySessionId(request.getSessionId()));
 
                 MatchingTimeout timeoutEvent = MatchingTimeout.of(timedOutRequests);
                 eventPublisher.publishEvent(timeoutEvent);

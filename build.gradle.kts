@@ -40,6 +40,13 @@ dependencies {
     // Database
     runtimeOnly("org.postgresql:postgresql:42.7.4")
     runtimeOnly("com.h2database:h2:2.3.232")
+
+    // Docker Compose Support (Spring Boot 3.1+)
+    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+
+    // Flyway (Database Migration)
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
     
     // Redis (캐싱 + 세션) - Optional, can be enabled when Redis is available
     // implementation("org.springframework.boot:spring-boot-starter-data-redis")

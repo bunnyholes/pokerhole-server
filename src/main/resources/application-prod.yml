@@ -1,0 +1,85 @@
+# Production configuration
+spring:
+  application:
+    name: pokerhole
+
+  # Database configuration (overridden by environment variables)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/pokerhole}
+    username: ${SPRING_DATASOURCE_USERNAME:pokerhole}
+    password: ${SPRING_DATASOURCE_PASSWORD:pokerhole}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # JPA configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Never auto-create/update in production
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+# Production logging
+logging:
+  level:
+    root: INFO
+    dev.xiyo.pokerhole: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: pokerhole
+      environment: prod
+    export:
+      prometheus:
+        enabled: true
+
+# Production-specific game settings (can be overridden by environment variables)
+pokerhole:
+  game:
+    initial-chips: ${POKERHOLE_GAME_INITIAL_CHIPS:10000}
+    minimum-bet: ${POKERHOLE_GAME_MINIMUM_BET:100}
+    blind-amount: ${POKERHOLE_GAME_BLIND_AMOUNT:50}
+    max-players: ${POKERHOLE_GAME_MAX_PLAYERS:10}
+    min-players: ${POKERHOLE_GAME_MIN_PLAYERS:2}
+    round-timeout-seconds: ${POKERHOLE_GAME_ROUND_TIMEOUT:60}
+    turn-timeout-seconds: ${POKERHOLE_GAME_TURN_TIMEOUT:30}
+
+  matching:
+    auto-matching-enabled: ${POKERHOLE_MATCHING_AUTO_ENABLED:true}
+    wait-timeout-seconds: ${POKERHOLE_MATCHING_WAIT_TIMEOUT:30}
+    queue-process-interval-ms: ${POKERHOLE_MATCHING_QUEUE_INTERVAL:5000}
+    players-per-game: ${POKERHOLE_MATCHING_PLAYERS_PER_GAME:4}
+    ai-player-enabled: ${POKERHOLE_MATCHING_AI_PLAYER_ENABLED:true}
+    code-matching-enabled: ${POKERHOLE_MATCHING_CODE_ENABLED:true}
+    code-expiration-minutes: ${POKERHOLE_MATCHING_CODE_EXPIRATION:30}

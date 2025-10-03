@@ -18,8 +18,14 @@ public enum ServerMessageType {
     GAME_STARTED,       // 게임 시작
     GAME_STATE_UPDATE,  // 게임 상태 업데이트
     PLAYER_ACTION,      // 플레이어 액션 알림
+    TURN_CHANGED,       // 턴 변경 알림
+    ROUND_PROGRESSED,   // 베팅 라운드 진행 (FLOP/TURN/RIVER)
     ROUND_COMPLETED,    // 라운드 종료
     GAME_ENDED,         // 게임 종료
+
+    // 타임아웃 이벤트
+    TURN_TIMEOUT_STARTED,   // 턴 타임아웃 시작 (remainingSeconds 포함)
+    PLAYER_TIMED_OUT,       // 플레이어 타임아웃 (자동 FOLD)
 
     // 채팅
     CHAT_MESSAGE,       // 채팅 메시지

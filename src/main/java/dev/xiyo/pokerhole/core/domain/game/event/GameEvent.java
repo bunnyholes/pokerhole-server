@@ -7,5 +7,12 @@ import dev.xiyo.pokerhole.core.domain.shared.DomainEvent;
  * 모든 게임 이벤트는 이 인터페이스를 구현해야 합니다.
  */
 public sealed interface GameEvent extends DomainEvent
-    permits RoundStarted, RoundEnded, BettingPhaseStarted {
+    permits RoundStarted,
+            RoundEnded,
+            BettingPhaseStarted,
+            PlayerActed,
+            RoundProgressed,
+            TurnChanged,
+            PotDistributed,
+            DealerButtonRotated {
 }

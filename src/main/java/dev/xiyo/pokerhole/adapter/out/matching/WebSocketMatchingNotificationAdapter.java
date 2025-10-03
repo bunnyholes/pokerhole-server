@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.xiyo.pokerhole.adapter.in.websocket.message.MessageCodec;
 import dev.xiyo.pokerhole.adapter.in.websocket.message.ServerMessage;
 import dev.xiyo.pokerhole.adapter.in.websocket.message.ServerMessageType;
+import dev.xiyo.pokerhole.adapter.in.websocket.metrics.GameMetrics;
 import dev.xiyo.pokerhole.adapter.in.websocket.session.PlayerSession;
 import dev.xiyo.pokerhole.adapter.in.websocket.session.WebSocketSessionRegistry;
 import dev.xiyo.pokerhole.core.application.port.out.matching.MatchingNotificationPort;
@@ -31,10 +32,15 @@ public class WebSocketMatchingNotificationAdapter implements MatchingNotificatio
 
     private final WebSocketSessionRegistry sessionRegistry;
     private final MessageCodec messageCodec;
+    private final GameMetrics gameMetrics;
 
     @Override
     public void notifyMatchingCompleted(List<MatchingRequest> matchedPlayers) {
         log.info("✅ 매칭 완료 알림: {} 명", matchedPlayers.size());
+
+        // 메트릭 기록: 게임 시작 및 활성 플레이어 증가
+        gameMetrics.incrementGamesStarted();
+        matchedPlayers.forEach(req -> gameMetrics.incrementActivePlayers());
 
         List<Map<String, Object>> playerList = matchedPlayers.stream()
                 .map(req -> Map.<String, Object>of(
@@ -90,20 +96,36 @@ public class WebSocketMatchingNotificationAdapter implements MatchingNotificatio
 
     /**
      * WebSocket 메시지 전송 헬퍼
+     * WebSocket 세션은 동시에 여러 메시지를 전송할 수 없으므로 세션별로 동기화합니다.
      */
     private void sendMessage(WebSocketSession session, ServerMessage message) {
+        if (session == null) {
+            log.warn("세션이 null이어서 메시지를 보낼 수 없습니다");
+            return;
+        }
+
         if (!session.isOpen()) {
             log.warn("세션이 닫혀있어 메시지를 보낼 수 없습니다: sessionId={}", session.getId());
             return;
         }
 
-        try {
-            String json = messageCodec.encode(message);
-            session.sendMessage(new TextMessage(json));
-        } catch (JsonProcessingException e) {
-            log.error("메시지 직렬화 실패: sessionId={}", session.getId(), e);
-        } catch (IOException e) {
-            log.error("메시지 전송 실패: sessionId={}", session.getId(), e);
+        // 세션별 동기화: WebSocket은 동시 전송을 지원하지 않음
+        synchronized (session) {
+            try {
+                String json = messageCodec.encode(message);
+                session.sendMessage(new TextMessage(json));
+                log.debug("메시지 전송 성공: sessionId={}, type={}", session.getId(), message.getType());
+            } catch (JsonProcessingException e) {
+                log.error("메시지 직렬화 실패: sessionId={}, type={}", session.getId(), message.getType(), e);
+            } catch (IOException e) {
+                log.error("메시지 전송 실패: sessionId={}, type={}", session.getId(), message.getType(), e);
+                // 세션이 실제로 닫혔을 수 있으므로 레지스트리에서 제거
+                try {
+                    sessionRegistry.unregisterBySessionId(session.getId());
+                } catch (Exception ex) {
+                    log.error("세션 정리 실패: sessionId={}", session.getId(), ex);
+                }
+            }
         }
     }
 }

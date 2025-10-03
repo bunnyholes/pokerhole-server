@@ -1,6 +1,7 @@
 package dev.xiyo.pokerhole.core.domain.player;
 
 import dev.xiyo.pokerhole.core.domain.card.*;
+import dev.xiyo.pokerhole.core.domain.player.vo.PlayerStatus;
 
 import java.util.*;
 
@@ -9,7 +10,11 @@ public class Player {
 
     private final String nickName; // 이름
     private final Hand hand = new Hand();
-    private int point = 10_000; // 총 획득 포인트
+    private int point = 10_000; // 총 획득 포인트 (칩)
+
+    // Texas Hold'em 필드
+    private PlayerStatus status = PlayerStatus.WAITING; // 현재 상태
+    private int currentBet = 0; // 이번 라운드 베팅액
 
     private final PlayerRecord playerRecord =  new PlayerRecord(); // 전적
 
@@ -69,6 +74,86 @@ public class Player {
     public void prizePoint(int prize) {
         this.point += prize;
     }
+
+    // ===== Texas Hold'em 메서드 =====
+
+    /**
+     * 칩 조회 (Texas Hold'em 용어)
+     */
+    public int getChips() {
+        return point;
+    }
+
+    /**
+     * 칩 추가 (팟 분배 시)
+     */
+    public void addChips(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("추가할 칩은 0 이상이어야 합니다.");
+        }
+        this.point += amount;
+    }
+
+    /**
+     * 현재 상태 조회
+     */
+    public PlayerStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * 상태 변경
+     */
+    public void setStatus(PlayerStatus status) {
+        this.status = status;
+    }
+
+    /**
+     * 현재 베팅액 조회
+     */
+    public int getCurrentBet() {
+        return currentBet;
+    }
+
+    /**
+     * 베팅 (칩 감소, 현재 베팅액 증가)
+     * @param amount 베팅할 금액
+     * @return 실제 베팅된 금액 (ALL_IN의 경우 남은 칩 전부)
+     */
+    public int bet(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("베팅 금액은 0 이상이어야 합니다.");
+        }
+
+        // ALL_IN 체크: 요청 금액이 남은 칩보다 크면 ALL_IN
+        int actualBet = Math.min(amount, point);
+
+        this.point -= actualBet;
+        this.currentBet += actualBet;
+
+        // ALL_IN인 경우 상태 변경
+        if (this.point == 0) {
+            this.status = PlayerStatus.ALL_IN;
+        }
+
+        return actualBet;
+    }
+
+    /**
+     * 폴드 (게임 포기)
+     */
+    public void fold() {
+        this.status = PlayerStatus.FOLDED;
+    }
+
+    /**
+     * 새 라운드 시작 시 베팅액 초기화
+     */
+    public void resetBet() {
+        this.currentBet = 0;
+    }
+
+    // ===== 기존 메서드 =====
 
     private boolean isHandOpen = false;
     public void openHand() {

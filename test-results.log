@@ -1,0 +1,22 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2025-10-04T01:53:44.341+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] o.s.s.quartz.SchedulerFactoryBean        : Shutting down Quartz Scheduler
+2025-10-04T01:53:44.341+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] org.quartz.core.QuartzScheduler          : Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2025-10-04T01:53:44.341+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] org.quartz.core.QuartzScheduler          : Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-10-04T01:53:44.342+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] org.quartz.core.QuartzScheduler          : Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2025-10-04T01:53:44.343+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] d.x.p.a.i.w.service.TurnTimeoutService   : TurnTimeoutService 종료 중...
+2025-10-04T01:53:44.343+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] d.x.p.a.i.w.service.TurnTimeoutService   : 모든 턴 타임아웃 취소 중... (활성 타임아웃: 0개)
+2025-10-04T01:53:44.343+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] d.x.p.a.i.w.service.TurnTimeoutService   : TurnTimeoutService 종료 완료
+2025-10-04T01:53:44.343+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-10-04T01:53:44.345+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-10-04T01:53:44.346+09:00  INFO 50671 --- [ionShutdownHook] [                                                 ] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+> Task :test
+
+BUILD SUCCESSFUL in 12s
+4 actionable tasks: 1 executed, 3 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html

@@ -3,9 +3,11 @@ package dev.xiyo.pokerhole.adapter.in.websocket.session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * WebSocket 세션 레지스트리
@@ -48,23 +50,37 @@ public class WebSocketSessionRegistry {
 
     /**
      * 세션 제거 (세션 ID 기준)
+     * 동시성 문제 방지를 위해 동기화 처리
      */
-    public void unregisterBySessionId(String sessionId) {
+    public synchronized void unregisterBySessionId(String sessionId) {
+        if (sessionId == null) {
+            log.warn("세션 ID가 null이어서 제거할 수 없습니다");
+            return;
+        }
+
         PlayerSession session = sessionsBySessionId.remove(sessionId);
         if (session != null) {
             sessionsByUuid.remove(session.getUuid());
-            log.info("플레이어 세션 제거: sessionId={}, uuid={}", sessionId, session.getUuid());
+            log.info("플레이어 세션 제거: sessionId={}, uuid={}, nickname={}",
+                    sessionId, session.getUuid(), session.getNickname());
         }
     }
 
     /**
      * 세션 제거 (UUID 기준)
+     * 동시성 문제 방지를 위해 동기화 처리
      */
-    public void unregisterByUuid(String uuid) {
+    public synchronized void unregisterByUuid(String uuid) {
+        if (uuid == null) {
+            log.warn("UUID가 null이어서 제거할 수 없습니다");
+            return;
+        }
+
         PlayerSession session = sessionsByUuid.remove(uuid);
         if (session != null) {
             sessionsBySessionId.remove(session.getSessionId());
-            log.info("플레이어 세션 제거: uuid={}, sessionId={}", uuid, session.getSessionId());
+            log.info("플레이어 세션 제거: uuid={}, sessionId={}, nickname={}",
+                    uuid, session.getSessionId(), session.getNickname());
         }
     }
 
@@ -87,5 +103,14 @@ public class WebSocketSessionRegistry {
      */
     public boolean containsSessionId(String sessionId) {
         return sessionsBySessionId.containsKey(sessionId);
+    }
+
+    /**
+     * 특정 방에 속한 모든 플레이어 세션 조회
+     */
+    public List<PlayerSession> findAllByRoomId(String roomId) {
+        return sessionsBySessionId.values().stream()
+                .filter(session -> session.isInRoom() && roomId.equals(session.getCurrentRoomId()))
+                .collect(Collectors.toList());
     }
 }

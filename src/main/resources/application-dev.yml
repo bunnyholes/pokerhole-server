@@ -3,11 +3,26 @@ spring:
   application:
     name: pokerhole
 
+  # JPA configuration for development
+  jpa:
+    hibernate:
+      ddl-auto: update  # Auto-update schema in development
+    show-sql: true  # Show SQL in development
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Flyway configuration for development
+  flyway:
+    clean-disabled: false  # Allow clean in development (WARNING: deletes all data)
+    clean-on-validation-error: true
+
 # Enable debug logging for development
 logging:
   level:
     dev.xiyo.pokerhole: DEBUG
     org.springframework.web: INFO
+    org.flywaydb: DEBUG  # Show Flyway migration details
 
 # Development-specific game settings
 pokerhole:

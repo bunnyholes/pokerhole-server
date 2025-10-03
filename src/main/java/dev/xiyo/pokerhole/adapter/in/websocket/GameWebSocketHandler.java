@@ -123,10 +123,12 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 중복 UUID 체크
+        // 중복 UUID 체크 - 에러로 처리 (정상 상황 아님)
         if (sessionRegistry.containsUuid(uuid)) {
+            log.error("중복 UUID로 인한 등록 실패: sessionId={}, uuid={}, nickname={} - 이미 연결된 세션이 존재합니다",
+                    session.getId(), uuid, nickname);
             sendMessage(session, ServerMessage.of(ServerMessageType.REGISTER_FAILURE,
-                    Map.of("reason", "이미 등록된 UUID입니다.")));
+                    Map.of("reason", "이미 등록된 UUID입니다. 다시 연결해주세요.")));
             return;
         }
 
@@ -362,20 +364,36 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
     /**
      * 메시지 전송
+     * WebSocket 세션은 동시에 여러 메시지를 전송할 수 없으므로 세션별로 동기화합니다.
      */
     private void sendMessage(WebSocketSession session, ServerMessage message) {
+        if (session == null) {
+            log.warn("세션이 null이어서 메시지를 전송할 수 없습니다");
+            return;
+        }
+
         if (!session.isOpen()) {
             log.warn("세션이 닫혀있어 메시지를 전송할 수 없습니다: sessionId={}", session.getId());
             return;
         }
 
-        try {
-            String json = messageCodec.encode(message);
-            session.sendMessage(new TextMessage(json));
-        } catch (JsonProcessingException e) {
-            log.error("메시지 인코딩 실패: sessionId={}", session.getId(), e);
-        } catch (IOException e) {
-            log.error("메시지 전송 실패: sessionId={}", session.getId(), e);
+        // 세션별 동기화: WebSocket은 동시 전송을 지원하지 않음
+        synchronized (session) {
+            try {
+                String json = messageCodec.encode(message);
+                session.sendMessage(new TextMessage(json));
+                log.debug("메시지 전송 성공: sessionId={}, type={}", session.getId(), message.getType());
+            } catch (JsonProcessingException e) {
+                log.error("메시지 인코딩 실패: sessionId={}, type={}", session.getId(), message.getType(), e);
+            } catch (IOException e) {
+                log.error("메시지 전송 실패: sessionId={}, type={}", session.getId(), message.getType(), e);
+                // 세션이 실제로 닫혔을 수 있으므로 레지스트리에서 제거
+                try {
+                    sessionRegistry.unregisterBySessionId(session.getId());
+                } catch (Exception ex) {
+                    log.error("세션 정리 실패: sessionId={}", session.getId(), ex);
+                }
+            }
         }
     }
 }

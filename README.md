@@ -266,6 +266,53 @@ Game replayEvents(UUID gameId) {
 
 ---
 
+## Texas Hold'em Gameplay
+
+### Game Flow
+
+```
+1. PRE_FLOP:  Deal 2 hole cards to each player → Betting round
+2. FLOP:      Reveal 3 community cards → Betting round
+3. TURN:      Reveal 1 more community card (total 4) → Betting round
+4. RIVER:     Reveal final community card (total 5) → Betting round
+5. SHOWDOWN:  Remaining players reveal hands → Winner determined
+```
+
+### How to Start a Game
+
+```bash
+# 1. Start server
+cd pokerhole-server
+./gradlew bootRun
+
+# 2. Connect client via WebSocket
+ws://localhost:8080/ws/game
+
+# 3. Register player
+{"type":"REGISTER","timestamp":1234567890,"payload":{"uuid":"player-1","nickname":"Alice"}}
+
+# 4. Join random match
+{"type":"JOIN_RANDOM_MATCH","timestamp":1234567891,"payload":{}}
+
+# 5. When match completes, room host starts game
+{"type":"START_TEXAS_HOLDEM","timestamp":1234567892,"payload":{}}
+
+# 6. Players take turns: CALL, RAISE, FOLD, CHECK, ALL_IN
+{"type":"CALL","timestamp":1234567893,"payload":{}}
+```
+
+### Player Actions
+
+| Action | When Valid | Effect |
+|--------|-----------|--------|
+| `FOLD` | Any time | Exit game, forfeit pot |
+| `CHECK` | When `currentBet == 0` | Pass turn without betting |
+| `CALL` | When `currentBet > 0` | Match current bet |
+| `RAISE` | Any time | Increase bet amount |
+| `ALL_IN` | Any time | Bet all remaining chips |
+
+---
+
 ## WebSocket Protocol
 
 ### Endpoint
@@ -289,14 +336,15 @@ ws://localhost:8080/ws/game
 | Type | Payload | Description |
 |------|---------|-------------|
 | `REGISTER` | `{uuid, nickname}` | Initial connection |
-| `HEARTBEAT` | `{}` | Keep-alive |
+| `HEARTBEAT` | `{}` | Keep-alive (every 30s) |
 | `JOIN_RANDOM_MATCH` | `{}` | Join random matching |
-| `JOIN_CODE_MATCH` | `{code}` | Join with code |
+| `JOIN_CODE_MATCH` | `{code}` | Join with room code |
+| `START_TEXAS_HOLDEM` | `{}` | Start game (room host only) |
 | `CALL` | `{}` | Call current bet |
-| `RAISE` | `{amount}` | Raise bet |
+| `RAISE` | `{amount}` | Raise bet to amount |
 | `FOLD` | `{}` | Fold hand |
 | `CHECK` | `{}` | Check (no bet) |
-| `ALL_IN` | `{}` | All-in |
+| `ALL_IN` | `{}` | Bet all chips |
 
 ### Server → Client Messages
 
@@ -306,51 +354,140 @@ ws://localhost:8080/ws/game
 | `MATCHING_STARTED` | `{matchingId}` | Matching begun |
 | `MATCHING_PROGRESS` | `{waitingPlayers}` | Matching status |
 | `MATCHING_COMPLETED` | `{gameId, players}` | Game starting |
+| `GAME_STARTED` | `{gameId, players}` | Texas Hold'em started |
 | `GAME_STATE_UPDATE` | `{game state}` | Full game state sync |
 | `PLAYER_ACTION` | `{playerId, action}` | Action notification |
+| `TURN_CHANGED` | `{currentPlayer}` | Turn changed |
+| `ROUND_PROGRESSED` | `{round, cards}` | Round advanced (FLOP/TURN/RIVER) |
 | `ROUND_COMPLETED` | `{winners, pots}` | Round results |
 | `GAME_ENDED` | `{finalStandings}` | Game finished |
 | `ERROR` | `{message}` | Error occurred |
 
-### Game State Update Payload
+### Detailed Message Flow Example
+
+**Scenario**: Player1 raises to 200, Player2 calls
+
+```
+┌─────────┐                                      ┌─────────┐
+│ Player1 │                                      │ Server  │
+└────┬────┘                                      └────┬────┘
+     │                                                │
+     │ {"type":"RAISE","payload":{"amount":200}}     │
+     ├──────────────────────────────────────────────>│ 1. Validate turn
+     │                                                │ 2. Validate chips >= 200
+     │                                                │ 3. Dealer.processPlayerAction()
+     │                                                │ 4. pot += 200, currentBet = 200
+     │                                                │ 5. Move to next player
+     │                                                │
+     │<══════════════════════════════════════════════┤ PLAYER_ACTION (broadcast to all)
+     │ {"type":"PLAYER_ACTION","payload":{           │
+     │   "playerId":"uuid-1","nickname":"Player1",   │
+     │   "action":"RAISE","amount":200}}             │
+     │                                                │
+     │<══════════════════════════════════════════════┤ GAME_STATE_UPDATE (broadcast)
+     │ {"type":"GAME_STATE_UPDATE","payload":{       │
+     │   "gameId":"room-123","round":"PRE_FLOP",     │
+     │   "pot":200,"currentBet":200,                 │
+     │   "currentPlayer":"Player2",                  │
+     │   "players":[...]}}                           │
+     │                                                │
+
+┌─────────┐                                      ┌─────────┐
+│ Player2 │                                      │ Server  │
+└────┬────┘                                      └────┬────┘
+     │                                                │
+     │ {"type":"CALL","payload":{}}                  │
+     ├──────────────────────────────────────────────>│ 1. callAmount = 200 - 0 = 200
+     │                                                │ 2. player2.bet(200)
+     │                                                │ 3. pot += 200 (now 400)
+     │                                                │ 4. Check round complete
+     │                                                │    → All players acted
+     │                                                │    → All bets equal (200 each)
+     │                                                │ 5. progressToNextRound()
+     │                                                │    → Reveal 3 cards (FLOP)
+     │                                                │
+     │<══════════════════════════════════════════════┤ PLAYER_ACTION (broadcast)
+     │<══════════════════════════════════════════════┤ ROUND_PROGRESSED
+     │ {"type":"ROUND_PROGRESSED","payload":{        │
+     │   "fromRound":"PRE_FLOP","toRound":"FLOP",    │
+     │   "communityCards":["AH","KD","QC"]}}         │
+     │                                                │
+     │<══════════════════════════════════════════════┤ GAME_STATE_UPDATE
+     │ {"type":"GAME_STATE_UPDATE","payload":{       │
+     │   "round":"FLOP","pot":400,"currentBet":0,    │
+     │   "communityCards":["AH","KD","QC"],          │
+     │   "currentPlayer":"Player1"}}                 │
+     │                                                │
+```
+
+### Game State Update Payload (Current Schema)
+
+**Protocol updated in Phase 1 Step 7** - see `/PROTOCOL-COMPARISON.md` for details
 
 ```json
 {
-  "gameId": "uuid",
+  "gameId": "room-uuid",
+  "roomName": "Quick Match #42",
+  "playerCount": 2,
   "round": "FLOP",
-  "pot": 1000,
-  "currentBet": 200,
-  "communityCards": ["AS", "KH", "QD"],
+  "pot": 400,
+  "currentBet": 0,
+  "communityCards": ["AH", "KD", "QC"],
+  "currentPlayer": "Alice",
   "players": [
     {
-      "id": "player-1",
-      "nickname": "LuckyShark123",
-      "chips": 8500,
+      "nickname": "Alice",
+      "chips": 9800,
       "bet": 200,
-      "status": "ACTIVE",
-      "position": 0,
-      "cards": ["JC", "TD"]  // Only for current player
+      "status": "ACTIVE"
+    },
+    {
+      "nickname": "Bob",
+      "chips": 9800,
+      "bet": 200,
+      "status": "ACTIVE"
     }
-  ],
-  "currentPlayer": "player-2",
-  "validActions": ["CALL", "RAISE", "FOLD"]
+  ]
 }
 ```
+
+**Key Protocol Changes (Step 7)**:
+1. `roomId` → `gameId` (clearer naming)
+2. `currentTurnPlayer` → `currentPlayer` (simpler)
+3. Player `currentBet` → `bet` (consistency)
+4. Community cards: `[{"suit":"HEARTS","rank":"ACE"}]` → `["AH"]` (70% smaller payload)
 
 ---
 
 ## Testing
 
-### Current Test Coverage (31 tests)
+### Current Test Coverage (49 tests) ✅
 
-| Test Class | Description | Status |
-|------------|-------------|--------|
-| HandEvaluatorTest | Hand evaluation (21 golden vectors) | ✅ Pass |
-| HexagonalArchitectureTest | Architecture rule enforcement | ✅ Pass |
-| GuestVisitServiceTest | JPA persistence | ✅ Pass |
-| PokerHoleApplicationTest | Application context | ✅ Pass |
+| Test Class | Tests | Description | Status |
+|------------|-------|-------------|--------|
+| **TexasHoldemIntegrationTest** | 18 | Texas Hold'em game flow (Step 6) | ✅ Pass |
+| HandEvaluatorTest | 25 | Hand evaluation (21 golden vectors) | ✅ Pass |
+| HexagonalArchitectureTest | 4 | Architecture rule enforcement | ✅ Pass |
+| GuestVisitServiceTest | 1 | JPA persistence | ✅ Pass |
+| PokerHoleApplicationTest | 1 | Application context | ✅ Pass |
+| **Total** | **49** | **100% pass rate** | ✅ |
 
-**Note**: Full test suite (~500+ tests) planned for Phase 1 completion (Step 4-5).
+### Texas Hold'em Integration Tests (18 new)
+
+**File**: `src/test/java/dev/xiyo/pokerhole/dealer/TexasHoldemIntegrationTest.java`
+
+**Categories**:
+- **Game Start Tests** (3 tests): Hole card dealing, initial state, player order
+- **Player Action Tests** (6 tests): FOLD, CHECK, CALL, RAISE, ALL_IN validation
+- **Round Progression Tests** (2 tests): All rounds (PRE_FLOP → FLOP → TURN → RIVER → SHOWDOWN)
+- **Two-Player Scenarios** (3 tests): Full game flows with different betting patterns
+- **Error Cases** (4 tests): Invalid actions, wrong turn, insufficient chips
+
+**Critical Bug Fixes** (discovered during Step 6):
+1. **Bug #1**: Betting round completion logic - now checks if all ACTIVE players have acted
+2. **Bug #2**: CHECK action recording - now properly recorded in `currentRoundBets`
+
+**Result**: All 18 tests passing after bug fixes ✅
 
 ### Running Tests
 
@@ -692,11 +829,21 @@ MIT License
 
 ## Status
 
-**Last Updated**: 2025-10-03
+**Last Updated**: 2025-10-04
 
-- **Tests**: 31 tests, 100% pass
-- **Phase**: 1 WebSocket integration (~60% complete)
-- **Step 4**: GameCommandService structure complete (game logic TODO)
-- **Production**: Not ready (Phase 5 planned)
+- **Tests**: 49 tests, 100% pass ✅
+- **Phase**: 1 Complete - Texas Hold'em gameplay implemented (87.5%, Step 1-7 done)
+- **Implementation**: Full game flow (PRE_FLOP → SHOWDOWN) with betting, round progression, winner determination
+- **Protocol**: Server-client synchronized (4 field changes, 3 message types added)
+- **Bugs Fixed**: 2 critical bugs in betting round logic (Step 6)
+- **Production**: Not ready - Phase 2 required (side pots, blinds, timeouts)
 
-**Next Milestone**: Server-client protocol alignment (see /NEXT-STEP.md)
+**Completed Features**:
+- ✅ Texas Hold'em game logic (Dealer.java: 8 methods, 300+ lines)
+- ✅ Player actions (FOLD, CHECK, CALL, RAISE, ALL_IN)
+- ✅ Betting round progression (automatic round advancement)
+- ✅ Winner determination (HandEvaluator with 21 golden tests)
+- ✅ WebSocket real-time communication (action broadcasting, state sync)
+- ✅ Server authority (all actions validated, turn order enforced)
+
+**Next Milestone**: Step 8 - Documentation finalization (see /NEXT-STEP.md)

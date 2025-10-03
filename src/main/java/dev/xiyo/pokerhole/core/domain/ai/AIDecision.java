@@ -1,5 +1,6 @@
 package dev.xiyo.pokerhole.core.domain.ai;
 
+import dev.xiyo.pokerhole.core.domain.game.vo.PlayerAction;
 import lombok.Builder;
 import lombok.Value;
 
@@ -14,7 +15,7 @@ public class AIDecision {
     /**
      * 액션 타입
      */
-    ActionType action;
+    PlayerAction action;
 
     /**
      * 베팅 금액 (RAISE, BET인 경우)
@@ -36,7 +37,7 @@ public class AIDecision {
      */
     public static AIDecision fold(String reason) {
         return AIDecision.builder()
-                .action(ActionType.FOLD)
+                .action(PlayerAction.FOLD)
                 .amount(0)
                 .reason(reason)
                 .confidence(1.0)
@@ -48,7 +49,7 @@ public class AIDecision {
      */
     public static AIDecision check(String reason) {
         return AIDecision.builder()
-                .action(ActionType.CHECK)
+                .action(PlayerAction.CHECK)
                 .amount(0)
                 .reason(reason)
                 .confidence(0.8)
@@ -60,7 +61,7 @@ public class AIDecision {
      */
     public static AIDecision call(int amount, String reason) {
         return AIDecision.builder()
-                .action(ActionType.CALL)
+                .action(PlayerAction.CALL)
                 .amount(amount)
                 .reason(reason)
                 .confidence(0.7)
@@ -72,7 +73,7 @@ public class AIDecision {
      */
     public static AIDecision bet(int amount, String reason, double confidence) {
         return AIDecision.builder()
-                .action(ActionType.BET)
+                .action(PlayerAction.BET)
                 .amount(amount)
                 .reason(reason)
                 .confidence(confidence)
@@ -84,21 +85,10 @@ public class AIDecision {
      */
     public static AIDecision raise(int amount, String reason, double confidence) {
         return AIDecision.builder()
-                .action(ActionType.RAISE)
+                .action(PlayerAction.RAISE)
                 .amount(amount)
                 .reason(reason)
                 .confidence(confidence)
                 .build();
-    }
-
-    /**
-     * 액션 타입
-     */
-    public enum ActionType {
-        FOLD,
-        CHECK,
-        CALL,
-        BET,
-        RAISE
     }
 }
